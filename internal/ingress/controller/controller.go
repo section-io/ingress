@@ -947,8 +947,9 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 						Service:      &apiv1.Service{},
 					},
 				},
-				SSLPassthrough: anns.SSLPassthrough,
-				SSLCiphers:     anns.SSLCiphers,
+				SSLPassthrough:            anns.SSLPassthrough,
+				SSLCiphers:                anns.SSLCiphers,
+				TLSCertificateHostnameMap: make(map[string]string),
 			}
 		}
 	}
@@ -1006,7 +1007,6 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 			}
 
 			tlsSecretName := extractTLSSecretName(host, ing, n.store.GetLocalSSLCert)
-
 			if tlsSecretName == "" {
 				glog.V(3).Infof("host %v is listed on tls section but secretName is empty. Using default cert", host)
 				servers[host].SSLCertificate = defaultPemFileName
@@ -1041,6 +1041,26 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 
 			if cert.ExpireTime.Before(time.Now().Add(240 * time.Hour)) {
 				glog.Warningf("ssl certificate for host %v is about to expire in 10 days", host)
+			}
+
+			// populate the TLSCertificateHostnameMap
+			for _, tls := range ing.Spec.TLS {
+
+				for _, tlsHost := range tls.Hosts {
+					key := fmt.Sprintf("%v/%v", ing.Namespace, tls.SecretName)
+					cert, err := n.store.GetLocalSSLCert(key)
+					if err != nil {
+						glog.Warningf("ssl certificate \"%v\" does not exist in local store", key)
+						continue
+					}
+
+					if _, ok := servers[host].TLSCertificateHostnameMap[tlsHost]; ok {
+						// hostname already has a certificate assigned to it
+						glog.Warningf("hostname \"%v\" already has certificate \"%v\" assigned to it", tlsHost, cert.PemFileName)
+					} else {
+						servers[host].TLSCertificateHostnameMap[tlsHost] = cert.PemFileName
+					}
+				}
 			}
 		}
 	}
