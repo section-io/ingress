@@ -982,7 +982,8 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 						Service:      &apiv1.Service{},
 					},
 				},
-				SSLPassthrough: anns.SSLPassthrough,
+				SSLPassthrough:            anns.SSLPassthrough,
+				TLSCertificateHostnameMap: make(map[string]string),
 			}
 		}
 	}
@@ -1034,6 +1035,25 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 			tlsSecretName := ""
 			found := false
 			for _, tls := range ing.Spec.TLS {
+
+				for _, tlsHost := range tls.Hosts {
+					key := fmt.Sprintf("%v/%v", ing.Namespace, tls.SecretName)
+					bc, exists := n.sslCertTracker.Get(key)
+					if !exists {
+						glog.Warningf("ssl certificate \"%v\" does not exist in local store", key)
+						continue
+					}
+
+					cert := bc.(*ingress.SSLCert)
+
+					if _, ok := servers[host].TLSCertificateHostnameMap[tlsHost]; ok {
+						// hostname already has a certificate assigned to it
+						glog.Warningf("hostname \"%v\" already has certificate \"%v\" assigned to it", tlsHost, cert.PemFileName)
+					} else {
+						servers[host].TLSCertificateHostnameMap[tlsHost] = cert.PemFileName
+					}
+				}
+
 				if sets.NewString(tls.Hosts...).Has(host) {
 					tlsSecretName = tls.SecretName
 					found = true
