@@ -34,7 +34,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/defaultbackend"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/grpc"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/healthcheck"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/ipwhitelist"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/iprestrictions"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/loadbalancing"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/luarestywaf"
@@ -89,7 +89,7 @@ type Ingress struct {
 	LoadBalancing        string
 	UpstreamVhost        string
 	VtsFilterKey         string
-	Whitelist            ipwhitelist.SourceRange
+	IpRestrictionsList   iprestrictions.SourceRange
 	XForwardedPrefix     bool
 	SSLCiphers           string
 	Logs                 log.Config
@@ -130,7 +130,7 @@ func NewAnnotationExtractor(cfg resolver.Resolver) Extractor {
 			"LoadBalancing":        loadbalancing.NewParser(cfg),
 			"UpstreamVhost":        upstreamvhost.NewParser(cfg),
 			"VtsFilterKey":         vtsfilterkey.NewParser(cfg),
-			"Whitelist":            ipwhitelist.NewParser(cfg),
+			"IpRestrictionsList":   iprestrictions.NewParser(cfg),
 			"XForwardedPrefix":     xforwardedprefix.NewParser(cfg),
 			"SSLCiphers":           sslcipher.NewParser(cfg),
 			"Logs":                 log.NewParser(cfg),
