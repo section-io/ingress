@@ -441,7 +441,7 @@ func (n *NGINXController) getBackendServers(ingresses []*extensions.Ingress) ([]
 						loc.Rewrite = anns.Rewrite
 						loc.UpstreamVhost = anns.UpstreamVhost
 						loc.VtsFilterKey = anns.VtsFilterKey
-						loc.Whitelist = anns.Whitelist
+						loc.IpRestrictionsList = anns.IpRestrictionsList
 						loc.Denied = anns.Denied
 						loc.XForwardedPrefix = anns.XForwardedPrefix
 						loc.UsePortInRedirects = anns.UsePortInRedirects
@@ -477,7 +477,7 @@ func (n *NGINXController) getBackendServers(ingresses []*extensions.Ingress) ([]
 						Rewrite:              anns.Rewrite,
 						UpstreamVhost:        anns.UpstreamVhost,
 						VtsFilterKey:         anns.VtsFilterKey,
-						Whitelist:            anns.Whitelist,
+						IpRestrictionsList:   anns.IpRestrictionsList,
 						Denied:               anns.Denied,
 						XForwardedPrefix:     anns.XForwardedPrefix,
 						UsePortInRedirects:   anns.UsePortInRedirects,
@@ -918,7 +918,7 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 					// defLoc.Rewrite = anns.Rewrite
 					defLoc.UpstreamVhost = anns.UpstreamVhost
 					defLoc.VtsFilterKey = anns.VtsFilterKey
-					defLoc.Whitelist = anns.Whitelist
+					defLoc.IpRestrictionsList = anns.IpRestrictionsList
 					defLoc.Denied = anns.Denied
 					defLoc.GRPC = anns.GRPC
 					defLoc.LuaRestyWAF = anns.LuaRestyWAF

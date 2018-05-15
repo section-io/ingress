@@ -68,6 +68,7 @@ You can add these Kubernetes annotations to specific Ingress objects to customiz
 |[nginx.ingress.kubernetes.io/upstream-hash-by](#custom-nginx-upstream-hashing)|string|
 |[nginx.ingress.kubernetes.io/load-balance](#custom-nginx-load-balancing)|string|
 |[nginx.ingress.kubernetes.io/upstream-vhost](#custom-nginx-upstream-vhost)|string|
+|[nginx.ingress.kubernetes.io/blacklist-source-range](#blacklist-source-range)|CIDR|
 |[nginx.ingress.kubernetes.io/whitelist-source-range](#whitelist-source-range)|CIDR|
 |[nginx.ingress.kubernetes.io/proxy-buffering](#proxy-buffering)|string|
 |[nginx.ingress.kubernetes.io/ssl-ciphers](#ssl-ciphers)|string|
@@ -419,6 +420,16 @@ To enable this feature use the annotation `nginx.ingress.kubernetes.io/from-to-w
 !!! attention
     If at some point a new Ingress is created with a host equal to one of the options (like `domain.com`) the annotation will be omitted.
 
+### Blacklist source range
+
+You can specify the disallowed client IP source ranges through the `nginx.ingress.kubernetes.io/blacklist-source-range` annotation. The value is a comma separated list of [CIDRs](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing), e.g.  `10.0.0.0/24,172.10.0.1`.
+
+To configure this setting globally for all Ingress rules, the `blacklist-source-range` value may be set in the NGINX ConfigMap.
+
+!!! note
+    Adding an annotation to an Ingress rule overrides any global restriction.
+    If `blacklist-source-range` is specified, `whitelist-source-range` will be ignored even if it is set.
+
 ### Whitelist source range
 
 You can specify allowed client IP source ranges through the `nginx.ingress.kubernetes.io/whitelist-source-range` annotation.
@@ -428,6 +439,7 @@ To configure this setting globally for all Ingress rules, the `whitelist-source-
 
 !!! note
     Adding an annotation to an Ingress rule overrides any global restriction.
+    If `blacklist-source-range` is specified, `whitelist-source-range` will be ignored even if it is set.
 
 ### Custom timeouts
 

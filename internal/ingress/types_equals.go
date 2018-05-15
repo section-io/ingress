@@ -355,7 +355,7 @@ func (l1 *Location) Equal(l2 *Location) bool {
 	if !(&l1.Rewrite).Equal(&l2.Rewrite) {
 		return false
 	}
-	if !(&l1.Whitelist).Equal(&l2.Whitelist) {
+	if !(&l1.IpRestrictionsList).Equal(&l2.IpRestrictionsList) {
 		return false
 	}
 	if !(&l1.Proxy).Equal(&l2.Proxy) {

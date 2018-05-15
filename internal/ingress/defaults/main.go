@@ -128,6 +128,10 @@ type Backend struct {
 	// Let's us choose a load balancing algorithm per ingress
 	LoadBalancing string `json:"load-balance"`
 
+	// BlacklistSourceRange allows preventing access by certain client addresses
+	// http://nginx.org/en/docs/http/ngx_http_access_module.html
+	BlacklistSourceRange []string `json:"blacklist-source-range,-"`
+
 	// WhitelistSourceRange allows limiting access to certain client addresses
 	// http://nginx.org/en/docs/http/ngx_http_access_module.html
 	WhitelistSourceRange []string `json:"whitelist-source-range,-"`
