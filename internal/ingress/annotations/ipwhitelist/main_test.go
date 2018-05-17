@@ -135,59 +135,23 @@ func (m mockBackend) GetDefaultBackend() defaults.Backend {
 func TestParseAnnotationsWithDefaultConfig(t *testing.T) {
 	ing := buildIngress()
 
+	testName := "test parse annotation with default config"
+	expectCidr := []string{"1.2.3.4/32", "4.4.4.0/24"}
+
 	mockBackend := mockBackend{}
-
-	tests := map[string]struct {
-		net        string
-		expectCidr []string
-		expectErr  bool
-		errOut     string
-	}{
-		"test parse a valid net": {
-			net:        "10.0.0.0/24",
-			expectCidr: []string{"10.0.0.0/24"},
-			expectErr:  false,
-		},
-		"test parse a invalid net": {
-			net:       "ww",
-			expectErr: true,
-			errOut:    "the annotation does not contain a valid IP address or network: invalid CIDR address: ww",
-		},
-		"test parse a empty net": {
-			net:       "",
-			expectErr: true,
-			errOut:    "the annotation does not contain a valid IP address or network: invalid CIDR address: ",
-		},
-		"test parse multiple valid cidr": {
-			net:        "2.2.2.2/32,1.1.1.1/32,3.3.3.0/24",
-			expectCidr: []string{"1.1.1.1/32", "2.2.2.2/32", "3.3.3.0/24"},
-			expectErr:  false,
-		},
+	data := map[string]string{}
+	ing.SetAnnotations(data)
+	p := NewParser(mockBackend)
+	i, err := p.Parse(ing)
+	if err != nil {
+		t.Errorf("%v:unexpected error: %v", testName, err)
 	}
-
-	for testName, test := range tests {
-		data := map[string]string{}
-		data[parser.GetAnnotationWithPrefix("whitelist-source-range")] = test.net
-		ing.SetAnnotations(data)
-		p := NewParser(mockBackend)
-		i, err := p.Parse(ing)
-		if err != nil && !test.expectErr {
-			t.Errorf("%v:unexpected error: %v", testName, err)
-		}
-		if test.expectErr {
-			if err.Error() != test.errOut {
-				t.Errorf("%v:expected error: %v but %v return", testName, test.errOut, err.Error())
-			}
-		}
-		if !test.expectErr {
-			sr, ok := i.(*SourceRange)
-			if !ok {
-				t.Errorf("%v:expected a SourceRange type", testName)
-			}
-			if !strsEquals(sr.CIDR, test.expectCidr) {
-				t.Errorf("%v:expected %v CIDR but %v returned", testName, test.expectCidr, sr.CIDR)
-			}
-		}
+	sr, ok := i.(*SourceRange)
+	if !ok {
+		t.Errorf("%v:expected a SourceRange type", testName)
+	}
+	if !strsEquals(sr.CIDR, expectCidr) {
+		t.Errorf("%v:expected %v CIDR but %v returned", testName, expectCidr, sr.CIDR)
 	}
 }
 
