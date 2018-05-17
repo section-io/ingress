@@ -192,6 +192,13 @@ Enables the geoip2 module for NGINX. By default this is disabled.
 _References:_
 - https://github.com/leev/ngx_http_geoip2_module
 
+## enable-geoip2
+
+Enables the geoip2 module for NGINX. By default this is disabled.
+
+_References:_
+- https://github.com/leev/ngx_http_geoip2_module
+
 ## enable-owasp-modsecurity-crs
 
 Enables the OWASP ModSecurity Core Rule Set (CRS). _**default:**_ is disabled
@@ -732,6 +739,13 @@ Enables or disables [buffering of a client request body](http://nginx.org/en/doc
 
 Sets the global value of redirects (301) to HTTPS if the server has a TLS certificate (defined in an Ingress rule).
 _**default:**_ "true"
+
+## blacklist-source-range
+
+Sets the default blacklisted IPs for each `server` block. This can be overwritten by an annotation on an Ingress rule.
+See [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html).
+
+*Note:* If `blacklist-source-range` is specified, `whitelist-source-range` will be ignored even if it is set.
 
 ## blacklist-source-range
 
