@@ -151,6 +151,11 @@ type Server struct {
 	// used to  determine if the secret changed without the use of file
 	// system notifications
 	SSLPemChecksum string `json:"sslPemChecksum"`
+	// Map of certificates file locations keyed by hostname
+	// This will be all the TLS entries defined in the ingress object even if
+	// they don't match the hostname of this server block.
+	// Made available to the template engine so modules like lua can access them
+	TLSCertificateHostnameMap map[string]string `json:"tlsCertificateHostnameMap,omitempty"`
 	// Locations list of URIs configured in the server.
 	Locations []*Location `json:"locations,omitempty"`
 	// Alias return the alias of the server name
