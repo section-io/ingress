@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ipwhitelist
+package iprestrictions
 
 import (
 	"sort"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/pkg/errors"
 
 	extensions "k8s.io/api/extensions/v1beta1"
@@ -32,7 +33,8 @@ import (
 
 // SourceRange returns the CIDR
 type SourceRange struct {
-	CIDR []string `json:"cidr,omitempty"`
+	CIDR        []string `json:"cidr,omitempty"`
+	IsWhitelist bool     `json:"isWhitelist"`
 }
 
 // Equal tests for equality between two SourceRange types
@@ -64,33 +66,60 @@ func (sr1 *SourceRange) Equal(sr2 *SourceRange) bool {
 	return true
 }
 
-type ipwhitelist struct {
+type iprestrictions struct {
 	r resolver.Resolver
 }
 
 // NewParser creates a new whitelist annotation parser
 func NewParser(r resolver.Resolver) parser.IngressAnnotation {
-	return ipwhitelist{r}
+	return iprestrictions{r}
+}
+
+func getDefaultRange(a iprestrictions) *SourceRange {
+	defBackend := a.r.GetDefaultBackend()
+	sort.Strings(defBackend.WhitelistSourceRange)
+
+	if len(defBackend.BlacklistSourceRange) > 0 {
+		if len(defBackend.WhitelistSourceRange) > 0 {
+			glog.Warningf("Ignoring whitelist-source-range from configmap because blacklist-source-range is set")
+		}
+		return &SourceRange{CIDR: defBackend.BlacklistSourceRange, IsWhitelist: false}
+	} else {
+		return &SourceRange{CIDR: defBackend.WhitelistSourceRange, IsWhitelist: true}
+	}
 }
 
 // ParseAnnotations parses the annotations contained in the ingress
 // rule used to limit access to certain client addresses or networks.
 // Multiple ranges can specified using commas as separator
 // e.g. `18.0.0.0/8,56.0.0.0/8`
-func (a ipwhitelist) Parse(ing *extensions.Ingress) (interface{}, error) {
-	defBackend := a.r.GetDefaultBackend()
-	sort.Strings(defBackend.WhitelistSourceRange)
+func (a iprestrictions) Parse(ing *extensions.Ingress) (interface{}, error) {
 
-	val, err := parser.GetStringAnnotation("whitelist-source-range", ing)
-	// A missing annotation is not a problem, just use the default
+	var isWhitelist bool
+	val, err := parser.GetStringAnnotation("blacklist-source-range", ing)
+	//Check the blacklist-source-range first, if this is not set, see if a whitelist-source-range is set
 	if err == ing_errors.ErrMissingAnnotations {
-		return &SourceRange{CIDR: defBackend.WhitelistSourceRange}, nil
+
+		val, err = parser.GetStringAnnotation("whitelist-source-range", ing)
+		if err == ing_errors.ErrMissingAnnotations {
+			//If neither are set return the default blacklist or whitelist from the configmap, blacklist trumps whitelist
+			return getDefaultRange(a), nil
+		} else {
+			isWhitelist = true
+		}
+
+	} else {
+		isWhitelist = false
+		_, err = parser.GetStringAnnotation("whitelist-source-range", ing)
+		if err != ing_errors.ErrMissingAnnotations {
+			glog.Warningf("Ignoring whitelist-source-range on ingress %v because blacklist-source-range is set", ing.ObjectMeta.Name)
+		}
 	}
 
 	values := strings.Split(val, ",")
 	ipnets, ips, err := net.ParseIPNets(values...)
 	if err != nil && len(ips) == 0 {
-		return &SourceRange{CIDR: defBackend.WhitelistSourceRange}, ing_errors.LocationDenied{
+		return getDefaultRange(a), ing_errors.LocationDenied{
 			Reason: errors.Wrap(err, "the annotation does not contain a valid IP address or network"),
 		}
 	}
@@ -105,5 +134,5 @@ func (a ipwhitelist) Parse(ing *extensions.Ingress) (interface{}, error) {
 
 	sort.Strings(cidrs)
 
-	return &SourceRange{cidrs}, nil
+	return &SourceRange{cidrs, isWhitelist}, nil
 }

@@ -11,6 +11,10 @@
 load_module /etc/nginx/modules/ngx_http_modsecurity_module.so;
 {{ end }}
 
+{{ if $cfg.EnableGeoIp2 }}
+load_module /etc/nginx/modules/ngx_http_geoip2_module.so;
+{{ end }}
+
 {{ buildOpentracingLoad $cfg }}
 
 daemon off;
@@ -95,6 +99,26 @@ http {
     geoip_city          /etc/nginx/geoip/GeoLiteCity.dat;
     geoip_org           /etc/nginx/geoip/GeoIPASNum.dat;
     geoip_proxy_recursive on;
+    {{ end }}
+
+    {{ if $cfg.EnableGeoIp2 }}
+	# https://github.com/section-io/ngx_http_geoip2_module#example-usage
+	geoip2 /etc/nginx/geoip/GeoLite2-City.mmdb {
+		# use `mmdblookup` to see the available fields
+		$geoip2_city_country_code source=$the_real_ip country iso_code;
+		$geoip2_city_country_name country names en;
+		$geoip2_city city names en;
+		$geoip2_postal_code postal code;
+		$geoip2_dma_code location metro_code;
+		$geoip2_latitude location latitude;
+		$geoip2_longitude location longitude;
+		$geoip2_region_code subdivisions 0 iso_code;
+		$geoip2_region_name subdivisions 0 names en;
+	}
+
+	geoip2 /etc/nginx/geoip/GeoLite2-ASN.mmdb {
+		$geoip2_asn source=$the_real_ip autonomous_system_number;
+	}
     {{ end }}
 
     {{ if $cfg.EnableVtsStatus }}
@@ -396,20 +420,20 @@ http {
     }
     {{ end }}
 
-    {{/* build the maps that will be use to validate the Whitelist */}}
+    {{/* build the maps that will be use to validate the IpRestrictionsList */}}
     {{ range $index, $server := $servers }}
     {{ range $location := $server.Locations }}
     {{ $path := buildLocation $location }}
 
     {{ if isLocationAllowed $location }}
-    {{ if gt (len $location.Whitelist.CIDR) 0 }}
+    {{ if gt (len $location.IpRestrictionsList.CIDR) 0 }}
 
     # Deny for {{ print $server.Hostname  $path }}
     geo $the_real_ip {{ buildDenyVariable (print $server.Hostname "_"  $path) }} {
-        default 1;
+        default {{ if $location.IpRestrictionsList.IsWhitelist }}1{{ else }}0{{ end }};
 
-        {{ range $ip := $location.Whitelist.CIDR }}
-        {{ $ip }} 0;{{ end }}
+        {{ range $ip := $location.IpRestrictionsList.CIDR }}
+        {{ $ip }} {{ if $location.IpRestrictionsList.IsWhitelist }}0{{ else }}1{{ end }};{{ end }}
     }
     {{ end }}
     {{ end }}
@@ -937,7 +961,7 @@ stream {
             {{ end }}
 
             {{ if isLocationAllowed $location }}
-            {{ if gt (len $location.Whitelist.CIDR) 0 }}
+            {{ if gt (len $location.IpRestrictionsList.CIDR) 0 }}
             if ({{ buildDenyVariable (print $server.Hostname "_"  $path) }}) {
                 return 403;
             }

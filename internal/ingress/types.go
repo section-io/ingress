@@ -28,7 +28,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/authtls"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/connection"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/cors"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/ipwhitelist"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/iprestrictions"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/luarestywaf"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/proxy"
@@ -151,6 +151,11 @@ type Server struct {
 	// used to  determine if the secret changed without the use of file
 	// system notifications
 	SSLPemChecksum string `json:"sslPemChecksum"`
+	// Map of certificates file locations keyed by hostname
+	// This will be all the TLS entries defined in the ingress object even if
+	// they don't match the hostname of this server block.
+	// Made available to the template engine so modules like lua can access them
+	TLSCertificateHostnameMap map[string]string `json:"tlsCertificateHostnameMap,omitempty"`
 	// Locations list of URIs configured in the server.
 	Locations []*Location `json:"locations,omitempty"`
 	// Alias return the alias of the server name
@@ -230,10 +235,11 @@ type Location struct {
 	// Rewrite describes the redirection this location.
 	// +optional
 	Rewrite rewrite.Config `json:"rewrite,omitempty"`
-	// Whitelist indicates only connections from certain client
-	// addresses or networks are allowed.
+	// IpRestrictionsList is a list of client addresses or networks that are either
+	// blocked or allowewd. IsWhitelist property indicates if this is a whitelist
+	// or a blacklist
 	// +optional
-	Whitelist ipwhitelist.SourceRange `json:"whitelist,omitempty"`
+	IpRestrictionsList iprestrictions.SourceRange `json:"ipRestrictionsList,omitempty"`
 	// Proxy contains information about timeouts and buffer sizes
 	// to be used in connections against endpoints
 	// +optional

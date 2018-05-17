@@ -34,6 +34,7 @@ The following table shows a configuration option's name, type, and the default v
 |[error-log-path](#error-log-path)|string|"/var/log/nginx/error.log"|
 |[enable-dynamic-tls-records](#enable-dynamic-tls-records)|bool|"true"|
 |[enable-modsecurity](#enable-modsecurity)|bool|"false"|
+|[enable-geoip2](#enable-geoip2)|bool|"false"|
 |[enable-owasp-modsecurity-crs](#enable-owasp-modsecurity-crs)|bool|"false"|
 |[client-header-buffer-size](#client-header-buffer-size)|string|"1k"|
 |[client-header-timeout](#client-header-timeout)|int|60|
@@ -131,6 +132,7 @@ The following table shows a configuration option's name, type, and the default v
 |[proxy-redirect-from](#proxy-redirect-from)|string|"off"|
 |[proxy-request-buffering](#proxy-request-buffering)|string|"on"|
 |[ssl-redirect](#ssl-redirect)|bool|"true"|
+|[blacklist-source-range](#blacklist-source-range)|[]string|[]string{}|
 |[whitelist-source-range](#whitelist-source-range)|[]string|[]string{}|
 |[skip-access-log-urls](#skip-access-log-urls)|[]string|[]string{}|
 |[limit-rate](#limit-rate)|int|0|
@@ -182,6 +184,20 @@ _References:_
 ## enable-modsecurity
 
 Enables the modsecurity module for NGINX. _**default:**_ is disabled
+
+## enable-geoip2
+
+Enables the geoip2 module for NGINX. By default this is disabled.
+
+_References:_
+- https://github.com/leev/ngx_http_geoip2_module
+
+## enable-geoip2
+
+Enables the geoip2 module for NGINX. By default this is disabled.
+
+_References:_
+- https://github.com/leev/ngx_http_geoip2_module
 
 ## enable-owasp-modsecurity-crs
 
@@ -539,7 +555,7 @@ The value can either be:
 - round_robin: to use the default round robin loadbalancer
 - least_conn: to use the least connected method
 - ip_hash: to use a hash of the server for routing.
-- ewma: to use the peak ewma method for routing (only available with `enable-dynamic-configuration` flag) 
+- ewma: to use the peak ewma method for routing (only available with `enable-dynamic-configuration` flag)
 
 The default is least_conn.
 
@@ -724,10 +740,26 @@ Enables or disables [buffering of a client request body](http://nginx.org/en/doc
 Sets the global value of redirects (301) to HTTPS if the server has a TLS certificate (defined in an Ingress rule).
 _**default:**_ "true"
 
+## blacklist-source-range
+
+Sets the default blacklisted IPs for each `server` block. This can be overwritten by an annotation on an Ingress rule.
+See [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html).
+
+*Note:* If `blacklist-source-range` is specified, `whitelist-source-range` will be ignored even if it is set.
+
+## blacklist-source-range
+
+Sets the default blacklisted IPs for each `server` block. This can be overwritten by an annotation on an Ingress rule.
+See [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html).
+
+*Note:* If `blacklist-source-range` is specified, `whitelist-source-range` will be ignored even if it is set.
+
 ## whitelist-source-range
 
 Sets the default whitelisted IPs for each `server` block. This can be overwritten by an annotation on an Ingress rule.
 See [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html).
+
+*Note:* If `blacklist-source-range` is specified, `whitelist-source-range` will be ignored even if it is set.
 
 ## skip-access-log-urls
 
