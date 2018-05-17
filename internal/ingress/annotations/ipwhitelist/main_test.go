@@ -86,9 +86,9 @@ func TestParseAnnotations(t *testing.T) {
 			expectErr: true,
 			errOut:    "the annotation does not contain a valid IP address or network: invalid CIDR address: ",
 		},
-		"test parse multiple valid cidr": {
-			net:        "2.2.2.2/32,1.1.1.1/32,3.3.3.0/24",
-			expectCidr: []string{"1.1.1.1/32", "2.2.2.2/32", "3.3.3.0/24"},
+		"test parse multiple valid cidr & IPs": {
+			net:        "2.2.2.2/32,1.1.1.1/32,3.3.3.0/24,192.168.33.10",
+			expectCidr: []string{"1.1.1.1/32", "192.168.33.10", "2.2.2.2/32", "3.3.3.0/24"},
 			expectErr:  false,
 		},
 	}
