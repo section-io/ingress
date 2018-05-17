@@ -35,6 +35,7 @@ const (
 	customHTTPErrors         = "custom-http-errors"
 	skipAccessLogUrls        = "skip-access-log-urls"
 	whitelistSourceRange     = "whitelist-source-range"
+	blacklistSourceRange     = "blacklist-source-range"
 	proxyRealIPCIDR          = "proxy-real-ip-cidr"
 	bindAddress              = "bind-address"
 	httpRedirectCode         = "http-redirect-code"
@@ -60,6 +61,7 @@ func ReadConfig(src map[string]string) config.Configuration {
 	errors := make([]int, 0)
 	skipUrls := make([]string, 0)
 	whiteList := make([]string, 0)
+	blackList := make([]string, 0)
 	proxyList := make([]string, 0)
 	hideHeadersList := make([]string, 0)
 
@@ -88,6 +90,10 @@ func ReadConfig(src map[string]string) config.Configuration {
 	if val, ok := conf[whitelistSourceRange]; ok {
 		delete(conf, whitelistSourceRange)
 		whiteList = append(whiteList, strings.Split(val, ",")...)
+	}
+	if val, ok := conf[blacklistSourceRange]; ok {
+		delete(conf, blacklistSourceRange)
+		blackList = append(blackList, strings.Split(val, ",")...)
 	}
 	if val, ok := conf[proxyRealIPCIDR]; ok {
 		delete(conf, proxyRealIPCIDR)
@@ -155,6 +161,7 @@ func ReadConfig(src map[string]string) config.Configuration {
 	to.CustomHTTPErrors = filterErrors(errors)
 	to.SkipAccessLogURLs = skipUrls
 	to.WhitelistSourceRange = whiteList
+	to.BlacklistSourceRange = blackList
 	to.ProxyRealIPCIDR = proxyList
 	to.BindAddressIpv4 = bindAddressIpv4List
 	to.BindAddressIpv6 = bindAddressIpv6List

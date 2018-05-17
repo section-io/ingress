@@ -358,6 +358,9 @@ func (l1 *Location) Equal(l2 *Location) bool {
 	if !(&l1.Whitelist).Equal(&l2.Whitelist) {
 		return false
 	}
+	if !(&l1.Blacklist).Equal(&l2.Blacklist) {
+		return false
+	}
 	if !(&l1.Proxy).Equal(&l2.Proxy) {
 		return false
 	}

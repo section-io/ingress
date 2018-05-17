@@ -68,6 +68,7 @@ You can add these Kubernetes annotations to specific Ingress objects to customiz
 |[nginx.ingress.kubernetes.io/upstream-hash-by](#custom-nginx-upstream-hashing)|string|
 |[nginx.ingress.kubernetes.io/load-balance](#custom-nginx-load-balancing)|string|
 |[nginx.ingress.kubernetes.io/upstream-vhost](#custom-nginx-upstream-vhost)|string|
+|[nginx.ingress.kubernetes.io/blacklist-source-range](#blacklist-source-range)|CIDR|
 |[nginx.ingress.kubernetes.io/whitelist-source-range](#whitelist-source-range)|CIDR|
 |[nginx.ingress.kubernetes.io/proxy-buffering](#proxy-buffering)|string|
 |[nginx.ingress.kubernetes.io/ssl-ciphers](#ssl-ciphers)|string|
@@ -145,7 +146,7 @@ nginx.ingress.kubernetes.io/auth-realm: "realm string"
 NGINX exposes some flags in the [upstream configuration](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#upstream) that enable the configuration of each server in the upstream. The Ingress controller allows custom `max_fails` and `fail_timeout` parameters in a global context using `upstream-max-fails` and `upstream-fail-timeout` in the NGINX ConfigMap or in a particular Ingress rule. `upstream-max-fails` defaults to 0. This means NGINX will respect the container's `readinessProbe` if it is defined. If there is no probe and no values for `upstream-max-fails` NGINX will continue to send traffic to the container.
 
 
-!!! tip 
+!!! tip
 	With the default configuration NGINX will not health check your backends. Whenever the endpoints controller notices a readiness probe failure, that pod's IP will be removed from the list of endpoints. This will trigger the NGINX controller to also remove it from the upstreams.**
 
 To use custom values in an Ingress rule define these annotations:
@@ -157,7 +158,7 @@ To use custom values in an Ingress rule define these annotations:
 In NGINX, backend server pools are called "[upstreams](http://nginx.org/en/docs/http/ngx_http_upstream_module.html)". Each upstream contains the endpoints for a service. An upstream is created for each service that has Ingress rules defined.
 
 !!! attention
-	All Ingress rules using the same service will use the same upstream.  
+	All Ingress rules using the same service will use the same upstream.
     Only one of the Ingress rules should define annotations to configure the upstream servers.
 
 !!! example
@@ -203,9 +204,9 @@ The annotations are:
 
 !!! attention
     TLS with Client Authentication is **not** possible in Cloudflare and might result in unexpected behavior.
-  
+
     Cloudflare only allows Authenticated Origin Pulls and is required to use their own certificate: [https://blog.cloudflare.com/protecting-the-origin-with-tls-authenticated-origin-pulls/](https://blog.cloudflare.com/protecting-the-origin-with-tls-authenticated-origin-pulls/)
-  
+
     Only Authenticated Origin Pulls are allowed and can be configured by following their tutorial: [https://support.cloudflare.com/hc/en-us/articles/204494148-Setting-up-NGINX-to-use-TLS-Authenticated-Origin-Pulls](https://support.cloudflare.com/hc/en-us/articles/204494148-Setting-up-NGINX-to-use-TLS-Authenticated-Origin-Pulls)
 
 
@@ -419,6 +420,18 @@ To enable this feature use the annotation `nginx.ingress.kubernetes.io/from-to-w
 !!! attention
     If at some point a new Ingress is created with a host equal to one of the options (like `domain.com`) the annotation will be omitted.
 
+### Blacklist source range
+
+You can specify the disallowed client IP source ranges through the `nginx.ingress.kubernetes.io/blacklist-source-range` annotation. The value is a comma separated list of [CIDRs](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing), e.g.  `10.0.0.0/24,172.10.0.1`.
+
+To configure this setting globally for all Ingress rules, the `blacklist-source-range` value may be set in the NGINX ConfigMap.
+
+!!! note
+    Adding an annotation to an Ingress rule overrides any global restriction.
+
+!!! attention
+    If `whitelist-source-range` is specified, `blacklist-source-range` will be ignored even if it is set.
+
 ### Whitelist source range
 
 You can specify allowed client IP source ranges through the `nginx.ingress.kubernetes.io/whitelist-source-range` annotation.
@@ -428,6 +441,7 @@ To configure this setting globally for all Ingress rules, the `whitelist-source-
 
 !!! note
     Adding an annotation to an Ingress rule overrides any global restriction.
+    If `whitelist-source-range` is specified, `blacklist-source-range` will be ignored even if it is set.
 
 ### Custom timeouts
 
