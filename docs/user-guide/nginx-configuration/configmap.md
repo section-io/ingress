@@ -192,6 +192,13 @@ Enables the geoip2 module for NGINX. By default this is disabled.
 _References:_
 - https://github.com/leev/ngx_http_geoip2_module
 
+## enable-geoip2
+
+Enables the geoip2 module for NGINX. By default this is disabled.
+
+_References:_
+- https://github.com/leev/ngx_http_geoip2_module
+
 ## enable-owasp-modsecurity-crs
 
 Enables the OWASP ModSecurity Core Rule Set (CRS). _**default:**_ is disabled
