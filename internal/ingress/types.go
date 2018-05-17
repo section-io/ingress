@@ -28,7 +28,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/authtls"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/connection"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/cors"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/ipwhitelist"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/iprestrictions"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/luarestywaf"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/proxy"
@@ -235,10 +235,13 @@ type Location struct {
 	// Rewrite describes the redirection this location.
 	// +optional
 	Rewrite rewrite.Config `json:"rewrite,omitempty"`
+	// Blacklist indicates certain client addresses or networks are not allowed access.
+	// +optional
+	Blacklist iprestrictions.SourceRange `json:"blacklist,omitempty"`
 	// Whitelist indicates only connections from certain client
 	// addresses or networks are allowed.
 	// +optional
-	Whitelist ipwhitelist.SourceRange `json:"whitelist,omitempty"`
+	Whitelist iprestrictions.SourceRange `json:"whitelist,omitempty"`
 	// Proxy contains information about timeouts and buffer sizes
 	// to be used in connections against endpoints
 	// +optional

@@ -435,6 +435,17 @@ http {
         {{ range $ip := $location.Whitelist.CIDR }}
         {{ $ip }} 0;{{ end }}
     }
+    {{ else }}
+    {{ if gt (len $location.Blacklist.CIDR) 0 }}
+
+    # Deny for {{ print $server.Hostname  $path }}
+    geo $the_real_ip {{ buildDenyVariable (print $server.Hostname "_"  $path) }} {
+        default 0;
+
+        {{ range $ip := $location.Blacklist.CIDR }}
+        {{ $ip }} 1;{{ end }}
+    }
+    {{ end }}
     {{ end }}
     {{ end }}
     {{ end }}
@@ -961,7 +972,7 @@ stream {
             {{ end }}
 
             {{ if isLocationAllowed $location }}
-            {{ if gt (len $location.Whitelist.CIDR) 0 }}
+            {{ if gt (len $location.Whitelist.CIDR) 0 or gt (len $location.Blacklist.CIDR) 0 }}
             if ({{ buildDenyVariable (print $server.Hostname "_"  $path) }}) {
                 return 403;
             }
