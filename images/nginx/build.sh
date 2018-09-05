@@ -35,7 +35,7 @@ export MODSECURITY_VERSION=1.0.0
 export LUA_NGX_VERSION=0.10.12rc2
 export LUA_UPSTREAM_VERSION=0.07
 export COOKIE_FLAG_VERSION=1.1.0
-export GEOIP2_VERSION=2.0
+export GEOIP2_VERSION=3.0
 
 export BUILD_PATH=/tmp/build
 
@@ -196,7 +196,7 @@ get_src d81b33129c6fb5203b571fa4d8394823bf473d8872c0357a1d0f14420b1483bd \
 get_src 1ad2e34b111c802f9d0cdf019e986909123237a28c746b21295b63c9e785d9c3 \
         "http://luajit.org/download/LuaJIT-2.1.0-beta3.tar.gz"
 
-get_src ebb4652c4f9a2e1ee31fddefc4c93ff78e651a4b2727d3453d026bccbd708d99 \
+get_src 65a191688348a05d8d92b2e7ce9c6eb8cb8322205c34637da582a1205864133d \
         "https://github.com/leev/ngx_http_geoip2_module/archive/${GEOIP2_VERSION}.tar.gz"
 
 # improve compilation times
