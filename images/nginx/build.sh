@@ -108,11 +108,26 @@ function geoip_get {
   wget -O $GEOIP_FOLDER/$1 $2 || { echo "Could not download $1, exiting." ; exit 1; }
   gunzip $GEOIP_FOLDER/$1
 }
+
+function geoip2_get {
+  fileprefix=$1
+  destination=$2
+
+  working_dir=$(mktemp -d)
+  pushd "${working_dir}" >/dev/null
+
+  zipped_filename=$(curl --silent --fail --remote-name --remote-header-name --write-out "%{filename_effective}" "http://geolite.maxmind.com/download/geoip/database/${fileprefix}.tar.gz")
+  tar -zxvf "${zipped_filename}"
+  cp --force "${zipped_filename%.tar.gz}/${fileprefix}.mmdb" "${destination}"
+  popd >/dev/null
+
+  rm -rf "${working_dir}"
+}
 geoip_get "GeoIP.dat.gz" "https://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz"
 geoip_get "GeoLiteCity.dat.gz" "https://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz"
 geoip_get "GeoIPASNum.dat.gz" "http://download.maxmind.com/download/geoip/database/asnum/GeoIPASNum.dat.gz"
-geoip_get "GeoLite2-City.mmdb.gz" "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz"
-geoip_get "GeoLite2-ASN.mmdb.gz" "http://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
+geoip2_get "GeoLite2-City" "${GEOIP_FOLDER}"
+geoip2_get "GeoLite2-ASN" "${GEOIP_FOLDER}"
 
 mkdir --verbose -p "$BUILD_PATH"
 cd "$BUILD_PATH"
