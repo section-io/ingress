@@ -249,13 +249,7 @@ func (e1 *Endpoint) Equal(e2 *Endpoint) bool {
 }
 
 // Equal tests for equality between two PemCertificate types
-func (p1 *PemCertificate) Equal(p2 *PemCertificate) bool {
-	if p1 == p2 {
-		return true
-	}
-	if p1 == nil || p2 == nil {
-		return false
-	}
+func (p1 PemCertificate) Equal(p2 PemCertificate) bool {
 	if p1.FileName != p2.FileName {
 		return false
 	}

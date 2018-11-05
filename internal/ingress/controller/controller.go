@@ -951,7 +951,7 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 				},
 				SSLPassthrough:            anns.SSLPassthrough,
 				SSLCiphers:                anns.SSLCiphers,
-				TLSCertificateHostnameMap: make(map[string]string),
+				TLSCertificateHostnameMap: make(map[string]ingress.PemCertificate),
 			}
 		}
 	}
@@ -1060,7 +1060,7 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 						// hostname already has a certificate assigned to it
 						glog.Warningf("hostname \"%v\" already has certificate \"%v\" assigned to it", tlsHost, cert.PemFileName)
 					} else {
-						servers[host].TLSCertificateHostnameMap[tlsHost] = PemCertificate{
+						servers[host].TLSCertificateHostnameMap[tlsHost] = ingress.PemCertificate{
 							FileName: cert.PemFileName,
 							Checksum: cert.PemSHA,
 						}
