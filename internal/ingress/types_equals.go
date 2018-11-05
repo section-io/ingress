@@ -318,7 +318,7 @@ func (s1 *Server) Equal(s2 *Server) bool {
 	}
 
 	for idx, s1s := range s1.TLSCertificateHostnameMap {
-		if s1s.Equal(s2.TLSCertificateHostnameMap[idx]) {
+		if !s1s.Equal(s2.TLSCertificateHostnameMap[idx]) {
 			return false
 		}
 	}
