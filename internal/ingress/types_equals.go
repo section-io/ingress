@@ -295,6 +295,16 @@ func (s1 *Server) Equal(s2 *Server) bool {
 		}
 	}
 
+	if len(s1.TLSCertificateHostnameMap) != len(s2.TLSCertificateHostnameMap) {
+		return false
+	}
+
+	for idx, s1s := range s1.TLSCertificateHostnameMap {
+		if s1s != s2.TLSCertificateHostnameMap[idx] {
+			return false
+		}
+	}
+
 	return true
 }
 

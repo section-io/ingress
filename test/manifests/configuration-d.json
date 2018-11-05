@@ -200,7 +200,7 @@
 		}
 	}],
 	"servers": [{
-		"TLSCertificateHostnameMap": {"tlshost1":"certpath1","tlshost2":"certpath2"},
+		"TLSCertificateHostnameMap": {"tlshost3":"certpath3","tlshost2":"certpath2"},
 		"hostname": "_",
 		"sslPassthrough": false,
 		"sslCertificate": "/ingress-controller/ssl/default-fake-certificate.pem",
