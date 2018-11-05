@@ -248,6 +248,24 @@ func (e1 *Endpoint) Equal(e2 *Endpoint) bool {
 	return true
 }
 
+// Equal tests for equality between two PemCertificate types
+func (p1 *PemCertificate) Equal(p2 *PemCertificate) bool {
+	if p1 == p2 {
+		return true
+	}
+	if p1 == nil || p2 == nil {
+		return false
+	}
+	if p1.FileName != p2.FileName {
+		return false
+	}
+	if p1.Checksum != p2.Checksum {
+		return false
+	}
+
+	return true
+}
+
 // Equal tests for equality between two Server types
 func (s1 *Server) Equal(s2 *Server) bool {
 	if s1 == s2 {
@@ -300,7 +318,7 @@ func (s1 *Server) Equal(s2 *Server) bool {
 	}
 
 	for idx, s1s := range s1.TLSCertificateHostnameMap {
-		if s1s != s2.TLSCertificateHostnameMap[idx] {
+		if s1s.Equal(s2.TLSCertificateHostnameMap[idx]) {
 			return false
 		}
 	}

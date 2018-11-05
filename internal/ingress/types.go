@@ -132,6 +132,11 @@ type Endpoint struct {
 	Target *apiv1.ObjectReference `json:"target,omitempty"`
 }
 
+type PemCertificate struct {
+	FileName string `json:"fileName"`
+	Checksum string `json:"checksum"`
+}
+
 // Server describes a website
 type Server struct {
 	// Hostname returns the FQDN of the server
@@ -155,7 +160,7 @@ type Server struct {
 	// This will be all the TLS entries defined in the ingress object even if
 	// they don't match the hostname of this server block.
 	// Made available to the template engine so modules like lua can access them
-	TLSCertificateHostnameMap map[string]string `json:"tlsCertificateHostnameMap,omitempty"`
+	TLSCertificateHostnameMap map[string]PemCertificate `json:"tlsCertificateHostnameMap,omitempty"`
 	// Locations list of URIs configured in the server.
 	Locations []*Location `json:"locations,omitempty"`
 	// Alias return the alias of the server name

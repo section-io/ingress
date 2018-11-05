@@ -1060,7 +1060,10 @@ func (n *NGINXController) createServers(data []*extensions.Ingress,
 						// hostname already has a certificate assigned to it
 						glog.Warningf("hostname \"%v\" already has certificate \"%v\" assigned to it", tlsHost, cert.PemFileName)
 					} else {
-						servers[host].TLSCertificateHostnameMap[tlsHost] = cert.PemFileName
+						servers[host].TLSCertificateHostnameMap[tlsHost] = PemCertificate{
+							FileName: cert.PemFileName,
+							Checksum: cert.PemSHA,
+						}
 					}
 				}
 			}
