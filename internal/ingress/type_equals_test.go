@@ -42,12 +42,6 @@ func TestEqualConfiguration(t *testing.T) {
 		t.Errorf("unexpected error reading JSON file: %v", err)
 	}
 
-	dp, _ := filepath.Abs("../../test/manifests/configuration-d.json")
-	d, err := readJSON(dp)
-	if err != nil {
-		t.Errorf("unexpected error reading JSON file: %v", err)
-	}
-
 	if !a.Equal(b) {
 		t.Errorf("expected equal configurations (configuration-a.json and configuration-b.json)")
 	}
@@ -59,9 +53,69 @@ func TestEqualConfiguration(t *testing.T) {
 	if a.Equal(c) {
 		t.Errorf("expected equal configurations (configuration-a.json and configuration-c.json)")
 	}
+}
 
-	if a.Equal(d) {
-		t.Errorf("expected inequal configurations (configuration-a.json and configuration-d.json)")
+func TestNotEqualConfiguration(t *testing.T) {
+	ap, _ := filepath.Abs("../../test/manifests/configuration-a.json")
+	a, err := readJSON(ap)
+	if err != nil {
+		t.Errorf("unexpected error reading JSON file: %v", err)
+	}
+
+	b, err := readJSON(ap)
+	if err != nil {
+		t.Errorf("unexpected error reading JSON file: %v", err)
+	}
+	delete(b.Servers[0].TLSCertificateHostnameMap, "tlshost1")
+	if a.Equal(b) {
+		t.Errorf("expected not equal configurations (missing TLSCertificateHostnameMap entry)")
+	}
+
+	b, err = readJSON(ap)
+	if err != nil {
+		t.Errorf("unexpected error reading JSON file: %v", err)
+	}
+	b.Servers[0].TLSCertificateHostnameMap["tlshost3"] = PemCertificate{
+		FileName: "certpath3",
+		Checksum: "checksum3",
+	}
+	if a.Equal(b) {
+		t.Errorf("expected not equal configurations (extra TLSCertificateHostnameMap entry)")
+	}
+
+	b, err = readJSON(ap)
+	if err != nil {
+		t.Errorf("unexpected error reading JSON file: %v", err)
+	}
+	delete(b.Servers[0].TLSCertificateHostnameMap, "tlshost1")
+	b.Servers[0].TLSCertificateHostnameMap["tlshost3"] = PemCertificate{
+		FileName: "certpath3",
+		Checksum: "checksum3",
+	}
+	if a.Equal(b) {
+		t.Errorf("expected not equal configurations (replace TLSCertificateHostnameMap entry)")
+	}
+
+	b, err = readJSON(ap)
+	if err != nil {
+		t.Errorf("unexpected error reading JSON file: %v", err)
+	}
+	pem := b.Servers[0].TLSCertificateHostnameMap["tlshost1"]
+	pem.FileName = "NOTcertpath1"
+	b.Servers[0].TLSCertificateHostnameMap["tlshost1"] = pem
+	if a.Equal(b) {
+		t.Errorf("expected not equal configurations (TLSCertificateHostnameMap FileName change)")
+	}
+
+	b, err = readJSON(ap)
+	if err != nil {
+		t.Errorf("unexpected error reading JSON file: %v", err)
+	}
+	pem = b.Servers[0].TLSCertificateHostnameMap["tlshost1"]
+	pem.Checksum = "NOTchecksum1"
+	b.Servers[0].TLSCertificateHostnameMap["tlshost1"] = pem
+	if a.Equal(b) {
+		t.Errorf("expected not equal configurations (TLSCertificateHostnameMap Checksum change)")
 	}
 }
 
