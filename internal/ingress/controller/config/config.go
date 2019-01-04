@@ -585,7 +585,7 @@ func NewDefault() Configuration {
 		SSLSessionTimeout:          sslSessionTimeout,
 		EnableBrotli:               false,
 		UseGzip:                    true,
-		UseGeoIP:                   true,
+		UseGeoIP:                   false,
 		WorkerProcesses:            strconv.Itoa(runtime.NumCPU()),
 		WorkerShutdownTimeout:      "10s",
 		LoadBalanceAlgorithm:       defaultLoadBalancerAlgorithm,
