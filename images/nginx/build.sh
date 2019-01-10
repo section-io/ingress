@@ -103,11 +103,10 @@ fi
 
 # Get the GeoIP data
 GEOIP_FOLDER=/etc/nginx/geoip
-mkdir -p $GEOIP_FOLDER
-function geoip_get {
-  wget -O $GEOIP_FOLDER/$1 $2 || { echo "Could not download $1, exiting." ; exit 1; }
-  gunzip $GEOIP_FOLDER/$1
-}
+
+# MaxMind no longer supports the original GeoIP data - using the last version.
+mkdir --parents "${GEOIP_FOLDER}"
+mv Geo*.dat "${GEOIP_FOLDER}"
 
 function geoip2_get {
   fileprefix=$1
@@ -123,9 +122,6 @@ function geoip2_get {
 
   rm -rf "${working_dir}"
 }
-geoip_get "GeoIP.dat.gz" "https://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz"
-geoip_get "GeoLiteCity.dat.gz" "https://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz"
-geoip_get "GeoIPASNum.dat.gz" "http://download.maxmind.com/download/geoip/database/asnum/GeoIPASNum.dat.gz"
 geoip2_get "GeoLite2-City" "${GEOIP_FOLDER}"
 geoip2_get "GeoLite2-ASN" "${GEOIP_FOLDER}"
 
@@ -166,7 +162,7 @@ get_src 06dc5f9740d27dc4684399e491211be46a8069a10277f25513dadeb71199ce4c \
 get_src b65bb78bcd8806cf11695b980577abb5379369929240414c75eb4623a4d45cc3 \
         "https://github.com/rnburn/zipkin-cpp-opentracing/archive/v$ZIPKIN_CPP_VERSION.tar.gz"
 
-get_src 8deee6d6f7128f58bd6ba2893bd69c1fdbc8a3ad2797ba45ef94b977255d181c \
+get_src dab677f9a7a5eb1d7ecbd9e7c5af75613582b25fb0c587aa80130256989b7a6e \
         "https://github.com/SpiderLabs/ModSecurity-nginx/archive/v$MODSECURITY_VERSION.tar.gz"
 
 get_src 841916d60fee16fe245b67fe6938ad861ddd3f3ecf0df561d764baeda8739362 \

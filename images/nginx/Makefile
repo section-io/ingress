@@ -67,7 +67,7 @@ all-push: $(addprefix sub-push-,$(ALL_ARCH))
 
 container: .container-$(ARCH)
 .container-$(ARCH):
-	cp ./* $(TEMP_DIR)
+	cp --recursive ./* $(TEMP_DIR)
 	cd $(TEMP_DIR) && $(SED_I) 's|BASEIMAGE|$(BASEIMAGE)|g' Dockerfile
 	cd $(TEMP_DIR) && $(SED_I) "s|ARCH|$(QEMUARCH)|g" Dockerfile
 
