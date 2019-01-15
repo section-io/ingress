@@ -292,6 +292,9 @@ func (s1 *Server) Equal(s2 *Server) bool {
 	if s1.RedirectFromToWWW != s2.RedirectFromToWWW {
 		return false
 	}
+	if s1.ServerSnippet != s2.ServerSnippet {
+		return false
+	}
 
 	if len(s1.Locations) != len(s2.Locations) {
 		return false
