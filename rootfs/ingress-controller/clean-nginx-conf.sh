@@ -24,4 +24,7 @@
 
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})
 
-sed -e 's/\r//g' | sed -e 's/^  *$/\'$'\n/g' | sed -e '/^$/{N;/^\n$/D;}' | ${SCRIPT_ROOT}/indent.sh
+sed -e 's/\r//g' | \
+	sed -e 's/^  *$/\'$'\n/g' | \
+	sed -e '/^$/{N;/^\n$/D;}' | \
+	${SCRIPT_ROOT}/indent.sh

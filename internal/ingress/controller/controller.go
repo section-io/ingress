@@ -18,11 +18,12 @@ package controller
 
 import (
 	"fmt"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 
 	"github.com/mitchellh/hashstructure"
 	"k8s.io/klog"
@@ -97,6 +98,8 @@ type Configuration struct {
 	DynamicCertificatesEnabled bool
 
 	DisableCatchAll bool
+
+	ProcessTemplate string
 }
 
 // GetPublishService returns the Service used to set the load-balancer status of Ingresses.

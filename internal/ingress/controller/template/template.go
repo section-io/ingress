@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/url"
@@ -112,6 +113,21 @@ func (t *Template) Write(conf config.TemplateConfig) ([]byte, error) {
 	return outCmdBuf.Bytes(), nil
 }
 
+// toJson takes the value and writes it to /input.json.
+func toJson(input interface{}) string {
+	bin, err := json.MarshalIndent(input, "  ", "")
+	if err != nil {
+		return err.Error()
+	}
+
+	// www-data has permissions to write to /tmp
+	err = ioutil.WriteFile("/etc/nginx/input.json", bin, 0777)
+	if err != nil {
+		return err.Error()
+	}
+	return ""
+}
+
 var (
 	funcMap = text_template.FuncMap{
 		"empty": func(input interface{}) bool {
@@ -121,6 +137,7 @@ var (
 			}
 			return true
 		},
+		"toJson":                     toJson,
 		"escapeLiteralDollar":        escapeLiteralDollar,
 		"shouldConfigureLuaRestyWAF": shouldConfigureLuaRestyWAF,
 		"buildLuaSharedDictionaries": buildLuaSharedDictionaries,
