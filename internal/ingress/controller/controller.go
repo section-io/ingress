@@ -18,11 +18,12 @@ package controller
 
 import (
 	"fmt"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 
 	"github.com/mitchellh/hashstructure"
 	"k8s.io/klog"
@@ -97,6 +98,8 @@ type Configuration struct {
 	DynamicCertificatesEnabled bool
 
 	DisableCatchAll bool
+
+	ProcessTemplate string
 }
 
 // GetPublishService returns the Service used to set the load-balancer status of Ingresses.
@@ -474,6 +477,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 						loc.Rewrite = anns.Rewrite
 						loc.UpstreamVhost = anns.UpstreamVhost
 						loc.Whitelist = anns.Whitelist
+						loc.Blacklist = anns.Blacklist
 						loc.Denied = anns.Denied
 						loc.XForwardedPrefix = anns.XForwardedPrefix
 						loc.UsePortInRedirects = anns.UsePortInRedirects
@@ -517,6 +521,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 						Rewrite:              anns.Rewrite,
 						UpstreamVhost:        anns.UpstreamVhost,
 						Whitelist:            anns.Whitelist,
+						Blacklist:            anns.Blacklist,
 						Denied:               anns.Denied,
 						XForwardedPrefix:     anns.XForwardedPrefix,
 						UsePortInRedirects:   anns.UsePortInRedirects,
@@ -913,6 +918,10 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 	if err == nil {
 		defaultPemFileName = defaultCertificate.PemFileName
 		defaultPemSHA = defaultCertificate.PemSHA
+		klog.Warningf("Obtained Default SSL Certificate from Local (%s, %s)",
+			defaultPemFileName, defaultPemSHA)
+	} else {
+		klog.Warningf("Error getting Default SSL Certificate (%s)", err)
 	}
 
 	// initialize default server and root location
@@ -1132,6 +1141,9 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 				// useless placeholders: just to shut up NGINX configuration loader errors:
 				cert.PemFileName = defaultPemFileName
 				cert.PemSHA = defaultPemSHA
+				klog.Warningf("Assigning default PemFileName and PemSHA %s %s",
+					defaultPemFileName,
+					defaultPemSHA)
 			}
 
 			servers[host].SSLCert = *cert

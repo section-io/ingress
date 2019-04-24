@@ -19,11 +19,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -38,9 +40,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
+	"k8s.io/kubernetes/pkg/util/filesystem"
 
 	"k8s.io/ingress-nginx/internal/file"
 	"k8s.io/ingress-nginx/internal/ingress/controller"
+	ngx_config "k8s.io/ingress-nginx/internal/ingress/controller/config"
+	"k8s.io/ingress-nginx/internal/ingress/controller/template"
 	"k8s.io/ingress-nginx/internal/ingress/metric"
 	"k8s.io/ingress-nginx/internal/k8s"
 	"k8s.io/ingress-nginx/internal/net/ssl"
@@ -58,6 +63,41 @@ const (
 	fakeCertificate = "default-fake-certificate"
 )
 
+func processTemplate(s string) {
+	parts := strings.Split(s, ",")
+	if len(parts) != 2 {
+		panic(`expected process template value to have 'tmplFile,jsonFile' format`)
+	}
+
+	tmplFile, jsonFile := parts[0], parts[1]
+
+	cfg := &ngx_config.TemplateConfig{}
+
+	bin, err := ioutil.ReadFile(jsonFile)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(bin, cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	fs := filesystem.DefaultFs{}
+
+	tp, err := template.NewTemplate(tmplFile, fs)
+	if err != nil {
+		panic(err)
+	}
+
+	bin, err = tp.Write(*cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(bin))
+}
+
 func main() {
 	klog.InitFlags(nil)
 
@@ -72,6 +112,11 @@ func main() {
 
 	if err != nil {
 		klog.Fatal(err)
+	}
+
+	if conf.ProcessTemplate != "" {
+		processTemplate(conf.ProcessTemplate)
+		os.Exit(0)
 	}
 
 	nginxVersion()

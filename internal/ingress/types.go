@@ -29,7 +29,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/connection"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/cors"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/influxdb"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/ipwhitelist"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/iprestrictions"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/luarestywaf"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/proxy"
@@ -265,7 +265,11 @@ type Location struct {
 	// Whitelist indicates only connections from certain client
 	// addresses or networks are allowed.
 	// +optional
-	Whitelist ipwhitelist.SourceRange `json:"whitelist,omitempty"`
+	Whitelist iprestrictions.SourceRange `json:"whitelist,omitempty"`
+	// Blacklist indicates connections from certain client
+	// addresses or networks are denied.
+	// +optional
+	Blacklist iprestrictions.SourceRange `json:"whitelist,omitempty"`
 	// Proxy contains information about timeouts and buffer sizes
 	// to be used in connections against endpoints
 	// +optional

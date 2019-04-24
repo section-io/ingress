@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ipwhitelist
+package iprestrictions
 
 import (
 	"sort"
@@ -33,6 +33,39 @@ import (
 // SourceRange returns the CIDR
 type SourceRange struct {
 	CIDR []string `json:"cidr,omitempty"`
+}
+
+// parseAnnotation parses the annotations contained in the ingress
+// rule used to limit access to certain client addresses or networks.
+// Multiple ranges can specified using commas as separator
+// e.g. `18.0.0.0/8,56.0.0.0/8`
+func parseAnnotation(annotationName string, r resolver.Resolver, ing *extensions.Ingress, defaultValues []string) (interface{}, error) {
+
+	val, err := parser.GetStringAnnotation(annotationName, ing)
+	// A missing annotation is not a problem, just use the default
+	if err == ing_errors.ErrMissingAnnotations {
+		return &SourceRange{CIDR: defaultValues}, nil
+	}
+
+	values := strings.Split(val, ",")
+	ipnets, ips, err := net.ParseIPNets(values...)
+	if err != nil && len(ips) == 0 {
+		return &SourceRange{CIDR: defaultValues}, ing_errors.LocationDenied{
+			Reason: errors.Wrap(err, "the annotation does not contain a valid IP address or network"),
+		}
+	}
+
+	cidrs := []string{}
+	for k := range ipnets {
+		cidrs = append(cidrs, k)
+	}
+	for k := range ips {
+		cidrs = append(cidrs, k)
+	}
+
+	sort.Strings(cidrs)
+
+	return &SourceRange{cidrs}, nil
 }
 
 // Equal tests for equality between two SourceRange types
@@ -68,8 +101,8 @@ type ipwhitelist struct {
 	r resolver.Resolver
 }
 
-// NewParser creates a new whitelist annotation parser
-func NewParser(r resolver.Resolver) parser.IngressAnnotation {
+// NewWhitelistParser creates a new whitelist annotation parser
+func NewWhitelistParser(r resolver.Resolver) parser.IngressAnnotation {
 	return ipwhitelist{r}
 }
 
@@ -81,29 +114,21 @@ func (a ipwhitelist) Parse(ing *extensions.Ingress) (interface{}, error) {
 	defBackend := a.r.GetDefaultBackend()
 	sort.Strings(defBackend.WhitelistSourceRange)
 
-	val, err := parser.GetStringAnnotation("whitelist-source-range", ing)
-	// A missing annotation is not a problem, just use the default
-	if err == ing_errors.ErrMissingAnnotations {
-		return &SourceRange{CIDR: defBackend.WhitelistSourceRange}, nil
-	}
+	return parseAnnotation("whitelist-source-range", a.r, ing, defBackend.WhitelistSourceRange)
+}
 
-	values := strings.Split(val, ",")
-	ipnets, ips, err := net.ParseIPNets(values...)
-	if err != nil && len(ips) == 0 {
-		return &SourceRange{CIDR: defBackend.WhitelistSourceRange}, ing_errors.LocationDenied{
-			Reason: errors.Wrap(err, "the annotation does not contain a valid IP address or network"),
-		}
-	}
+type ipblacklist struct {
+	r resolver.Resolver
+}
 
-	cidrs := []string{}
-	for k := range ipnets {
-		cidrs = append(cidrs, k)
-	}
-	for k := range ips {
-		cidrs = append(cidrs, k)
-	}
+// NewBlacklistParser creates a new blacklist annotation parser
+func NewBlacklistParser(r resolver.Resolver) parser.IngressAnnotation {
+	return ipblacklist{r}
+}
 
-	sort.Strings(cidrs)
+func (a ipblacklist) Parse(ing *extensions.Ingress) (interface{}, error) {
+	defBackend := a.r.GetDefaultBackend()
+	sort.Strings(defBackend.BlacklistSourceRange)
 
-	return &SourceRange{cidrs}, nil
+	return parseAnnotation("blacklist-source-range", a.r, ing, defBackend.BlacklistSourceRange)
 }

@@ -150,6 +150,9 @@ Feature backed by OpenResty Lua libraries. Requires that OCSP stapling is not en
 		metricsPerHost = flags.Bool("metrics-per-host", true,
 			`Export metrics per-host`)
 
+		processTemplate = flags.String("process-template", "",
+			`Process the template based the input json and template file`)
+
 		httpPort      = flags.Int("http-port", 80, `Port to use for servicing HTTP traffic.`)
 		httpsPort     = flags.Int("https-port", 443, `Port to use for servicing HTTPS traffic.`)
 		_             = flags.Int("status-port", 18080, `Port to use for exposing NGINX status pages.`)
@@ -256,6 +259,7 @@ Feature backed by OpenResty Lua libraries. Requires that OCSP stapling is not en
 			SSLProxy: *sslProxyPort,
 		},
 		DisableCatchAll: *disableCatchAll,
+		ProcessTemplate: *processTemplate,
 	}
 
 	return false, config, nil
