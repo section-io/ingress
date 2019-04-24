@@ -938,6 +938,8 @@ func configureCertificates(pcfg *ingress.Configuration) error {
 		})
 	}
 
+	klog.Warningf("Posting to /configuration/servers the servers array")
+
 	statusCode, _, err := nginx.NewPostStatusRequest("/configuration/servers", "application/json", servers)
 	if err != nil {
 		return err

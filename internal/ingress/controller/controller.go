@@ -916,6 +916,10 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 	if err == nil {
 		defaultPemFileName = defaultCertificate.PemFileName
 		defaultPemSHA = defaultCertificate.PemSHA
+		klog.Warningf("Obtained Default SSL Certificate from Local (%s, %s)",
+			defaultPemFileName, defaultPemSHA)
+	} else {
+		klog.Warningf("Error getting Default SSL Certificate %s", err)
 	}
 
 	// initialize default server and root location
@@ -1135,6 +1139,9 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 				// useless placeholders: just to shut up NGINX configuration loader errors:
 				cert.PemFileName = defaultPemFileName
 				cert.PemSHA = defaultPemSHA
+				klog.Warningf("Assigning default PemFileName and PemSHA %s %s",
+					defaultPemFileName,
+					defaultPemSHA)
 			}
 
 			servers[host].SSLCert = *cert

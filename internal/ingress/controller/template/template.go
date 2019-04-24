@@ -128,6 +128,28 @@ func toJson(input interface{}) string {
 	return ""
 }
 
+// reduceByAlias redueses the incoming server blocks to a single
+// server based on the alias
+func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
+	rs := map[string]*ingress.Server{}
+	for _, s := range servers {
+		alias := s.Alias
+		_, ok := rs[alias]
+		if !ok {
+			rs[alias] = s
+		} else {
+			rs[alias].Alias = fmt.Sprintf("%s %s", rs[alias].Alias, s.Hostname)
+		}
+	}
+
+	srv := make([]*ingress.Server, 0)
+	for _, server := range rs {
+		srv = append(srv, server)
+	}
+
+	return srv
+}
+
 var (
 	funcMap = text_template.FuncMap{
 		"empty": func(input interface{}) bool {
@@ -137,6 +159,7 @@ var (
 			}
 			return true
 		},
+		"reduceByAlias":              reduceByAlias,
 		"toJson":                     toJson,
 		"escapeLiteralDollar":        escapeLiteralDollar,
 		"shouldConfigureLuaRestyWAF": shouldConfigureLuaRestyWAF,
