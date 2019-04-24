@@ -39,7 +39,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/annotations/defaultbackend"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/http2pushpreload"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/influxdb"
-	"k8s.io/ingress-nginx/internal/ingress/annotations/ipwhitelist"
+	"k8s.io/ingress-nginx/internal/ingress/annotations/iprestrictions"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/loadbalancing"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/luarestywaf"
@@ -98,7 +98,8 @@ type Ingress struct {
 	UpstreamHashBy     upstreamhashby.Config
 	LoadBalancing      string
 	UpstreamVhost      string
-	Whitelist          ipwhitelist.SourceRange
+	Blacklist          iprestrictions.SourceRange
+	Whitelist          iprestrictions.SourceRange
 	XForwardedPrefix   bool
 	SSLCiphers         string
 	Logs               log.Config
@@ -142,7 +143,8 @@ func NewAnnotationExtractor(cfg resolver.Resolver) Extractor {
 			"UpstreamHashBy":       upstreamhashby.NewParser(cfg),
 			"LoadBalancing":        loadbalancing.NewParser(cfg),
 			"UpstreamVhost":        upstreamvhost.NewParser(cfg),
-			"Whitelist":            ipwhitelist.NewParser(cfg),
+			"Whitelist":            iprestrictions.NewWhitelistParser(cfg),
+			"Blacklist":            iprestrictions.NewBlacklistParser(cfg),
 			"XForwardedPrefix":     xforwardedprefix.NewParser(cfg),
 			"SSLCiphers":           sslcipher.NewParser(cfg),
 			"Logs":                 log.NewParser(cfg),
