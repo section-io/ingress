@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ipwhitelist
+package iprestrictions
 
 import (
 	"testing"
@@ -63,7 +63,7 @@ func buildIngress() *extensions.Ingress {
 	}
 }
 
-func TestParseAnnotations(t *testing.T) {
+func TestParseWhitelistAnnotations(t *testing.T) {
 	ing := buildIngress()
 	tests := map[string]struct {
 		net        string
@@ -86,9 +86,9 @@ func TestParseAnnotations(t *testing.T) {
 			expectErr: true,
 			errOut:    "the annotation does not contain a valid IP address or network: invalid CIDR address: ",
 		},
-		"test parse multiple valid cidr": {
-			net:        "2.2.2.2/32,1.1.1.1/32,3.3.3.0/24",
-			expectCidr: []string{"1.1.1.1/32", "2.2.2.2/32", "3.3.3.0/24"},
+		"test parse multiple valid cidr & IPs": {
+			net:        "2.2.2.2/32,1.1.1.1/32,3.3.3.0/24,192.168.33.10",
+			expectCidr: []string{"1.1.1.1/32", "192.168.33.10", "2.2.2.2/32", "3.3.3.0/24"},
 			expectErr:  false,
 		},
 	}
@@ -97,7 +97,7 @@ func TestParseAnnotations(t *testing.T) {
 		data := map[string]string{}
 		data[parser.GetAnnotationWithPrefix("whitelist-source-range")] = test.net
 		ing.SetAnnotations(data)
-		p := NewParser(&resolver.Mock{})
+		p := NewWhitelistParser(&resolver.Mock{})
 		i, err := p.Parse(ing)
 		if err != nil && !test.expectErr {
 			t.Errorf("%v:unexpected error: %v", testName, err)
@@ -119,12 +119,12 @@ func TestParseAnnotations(t *testing.T) {
 	}
 }
 
-type mockBackend struct {
+type mockWhitelistBackend struct {
 	resolver.Mock
 }
 
-// GetDefaultBackend returns the backend that must be used as default
-func (m mockBackend) GetDefaultBackend() defaults.Backend {
+// GetDefaultBackend returns the backend that must be used as default for whitelist only
+func (m mockWhitelistBackend) GetDefaultBackend() defaults.Backend {
 	return defaults.Backend{
 		WhitelistSourceRange: []string{"4.4.4.0/24", "1.2.3.4/32"},
 	}
@@ -132,62 +132,87 @@ func (m mockBackend) GetDefaultBackend() defaults.Backend {
 
 // Test that when we have a whitelist set on the Backend that is used when we
 // don't have the annotation
-func TestParseAnnotationsWithDefaultConfig(t *testing.T) {
+func TestParseWhitelistAnnotationsWithDefaultConfig(t *testing.T) {
 	ing := buildIngress()
 
 	mockBackend := mockBackend{}
+	testName := "test parse annotation with default config"
+	expectCidr := []string{"1.2.3.4/32", "4.4.4.0/24"}
 
-	tests := map[string]struct {
-		net        string
-		expectCidr []string
-		expectErr  bool
-		errOut     string
-	}{
-		"test parse a valid net": {
-			net:        "10.0.0.0/24",
-			expectCidr: []string{"10.0.0.0/24"},
-			expectErr:  false,
-		},
-		"test parse a invalid net": {
-			net:       "ww",
-			expectErr: true,
-			errOut:    "the annotation does not contain a valid IP address or network: invalid CIDR address: ww",
-		},
-		"test parse a empty net": {
-			net:       "",
-			expectErr: true,
-			errOut:    "the annotation does not contain a valid IP address or network: invalid CIDR address: ",
-		},
-		"test parse multiple valid cidr": {
-			net:        "2.2.2.2/32,1.1.1.1/32,3.3.3.0/24",
-			expectCidr: []string{"1.1.1.1/32", "2.2.2.2/32", "3.3.3.0/24"},
-			expectErr:  false,
-		},
+	mockBackend := mockWhitelistBackend{}
+	data := map[string]string{}
+	ing.SetAnnotations(data)
+	p := NewWhitelistParser(mockBackend)
+	i, err := p.Parse(ing)
+	if err != nil {
+		t.Errorf("%v:unexpected error: %v", testName, err)
 	}
+	sr, ok := i.(*SourceRange)
+	if !ok {
+		t.Errorf("%v:expected a SourceRange type", testName)
+	}
+	if !strsEquals(sr.CIDR, expectCidr) {
+		t.Errorf("%v:expected %v CIDR but %v returned", testName, expectCidr, sr.CIDR)
+	}
+}
 
-	for testName, test := range tests {
-		data := map[string]string{}
-		data[parser.GetAnnotationWithPrefix("whitelist-source-range")] = test.net
-		ing.SetAnnotations(data)
-		p := NewParser(mockBackend)
-		i, err := p.Parse(ing)
-		if err != nil && !test.expectErr {
-			t.Errorf("%v:unexpected error: %v", testName, err)
-		}
-		if test.expectErr {
-			if err.Error() != test.errOut {
-				t.Errorf("%v:expected error: %v but %v return", testName, test.errOut, err.Error())
-			}
-		}
-		if !test.expectErr {
-			sr, ok := i.(*SourceRange)
-			if !ok {
-				t.Errorf("%v:expected a SourceRange type", testName)
-			}
-			if !strsEquals(sr.CIDR, test.expectCidr) {
-				t.Errorf("%v:expected %v CIDR but %v returned", testName, test.expectCidr, sr.CIDR)
-			}
-		}
+// Test that when we have a blacklist set on the annotation with no white list it is used
+func TestParseBlacklistAnnotation(t *testing.T) {
+	ing := buildIngress()
+
+	testName := "test parse annotation with default config"
+	expectCidr := []string{"5.6.7.8/32", "6.6.6.0/24"}
+
+	data := map[string]string{}
+	data[parser.GetAnnotationWithPrefix("blacklist-source-range")] = "6.6.6.0/24,5.6.7.8/32"
+	ing.SetAnnotations(data)
+	p := NewBlacklistParser(&resolver.Mock{})
+	i, err := p.Parse(ing)
+	if err != nil {
+		t.Errorf("%v:unexpected error: %v", testName, err)
+	}
+	sr, ok := i.(*SourceRange)
+	if !ok {
+		t.Errorf("%v:expected a SourceRange type", testName)
+	}
+	if !strsEquals(sr.CIDR, expectCidr) {
+		t.Errorf("%v:expected %v CIDR but %v returned", testName, expectCidr, sr.CIDR)
+	}
+}
+
+type mockBlacklistBackend struct {
+	resolver.Mock
+}
+
+// GetDefaultBackend returns the backend that must be used as default for Blacklist only
+func (m mockBlacklistBackend) GetDefaultBackend() defaults.Backend {
+	return defaults.Backend{
+		BlacklistSourceRange: []string{"4.4.4.0/24", "1.2.3.4/32"},
+	}
+}
+
+// Test that when we have a black set on the Backend that is used when we
+// don't have the annotation
+func TestParseBlacklistAnnotationsWithDefaultConfig(t *testing.T) {
+	ing := buildIngress()
+
+	testName := "test parse annotation with default config"
+	expectCidr := []string{"1.2.3.4/32", "4.4.4.0/24"}
+
+	mockBackend := mockBlacklistBackend{}
+	data := map[string]string{}
+	ing.SetAnnotations(data)
+	p := NewBlacklistParser(mockBackend)
+	i, err := p.Parse(ing)
+	if err != nil {
+		t.Errorf("%v:unexpected error: %v", testName, err)
+	}
+	sr, ok := i.(*SourceRange)
+	if !ok {
+		t.Errorf("%v:expected a SourceRange type", testName)
+	}
+	if !strsEquals(sr.CIDR, expectCidr) {
+		t.Errorf("%v:expected %v CIDR but %v returned", testName, expectCidr, sr.CIDR)
 	}
 }
 

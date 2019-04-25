@@ -477,6 +477,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 						loc.Rewrite = anns.Rewrite
 						loc.UpstreamVhost = anns.UpstreamVhost
 						loc.Whitelist = anns.Whitelist
+						loc.Blacklist = anns.Blacklist
 						loc.Denied = anns.Denied
 						loc.XForwardedPrefix = anns.XForwardedPrefix
 						loc.UsePortInRedirects = anns.UsePortInRedirects
@@ -520,6 +521,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 						Rewrite:              anns.Rewrite,
 						UpstreamVhost:        anns.UpstreamVhost,
 						Whitelist:            anns.Whitelist,
+						Blacklist:            anns.Blacklist,
 						Denied:               anns.Denied,
 						XForwardedPrefix:     anns.XForwardedPrefix,
 						UsePortInRedirects:   anns.UsePortInRedirects,
@@ -919,7 +921,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 		klog.Warningf("Obtained Default SSL Certificate from Local (%s, %s)",
 			defaultPemFileName, defaultPemSHA)
 	} else {
-		klog.Warningf("Error getting Default SSL Certificate %s", err)
+		klog.Warningf("Error getting Default SSL Certificate (%s)", err)
 	}
 
 	// initialize default server and root location

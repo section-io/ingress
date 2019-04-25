@@ -142,6 +142,7 @@ The following table shows a configuration option's name, type, and the default v
 |[proxy-redirect-from](#proxy-redirect-from)|string|"off"|
 |[proxy-request-buffering](#proxy-request-buffering)|string|"on"|
 |[ssl-redirect](#ssl-redirect)|bool|"true"|
+|[blacklist-source-range](#blacklist-source-range)|[]string|[]string{}|
 |[whitelist-source-range](#whitelist-source-range)|[]string|[]string{}|
 |[skip-access-log-urls](#skip-access-log-urls)|[]string|[]string{}|
 |[limit-rate](#limit-rate)|int|0|
@@ -808,10 +809,17 @@ Enables or disables [buffering of a client request body](http://nginx.org/en/doc
 Sets the global value of redirects (301) to HTTPS if the server has a TLS certificate (defined in an Ingress rule).
 _**default:**_ "true"
 
+## blacklist-source-range
+Sets the default blacklisted IPs for each `server` block. This can be overwritten by an annotation on an Ingress rule.
+See [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html).
+
 ## whitelist-source-range
 
 Sets the default whitelisted IPs for each `server` block. This can be overwritten by an annotation on an Ingress rule.
 See [ngx_http_access_module](http://nginx.org/en/docs/http/ngx_http_access_module.html).
+
+''' important
+    If `whitelist-source-range` is specified, `blacklist-source-range` will be ignored even if it is set.
 
 ## skip-access-log-urls
 
