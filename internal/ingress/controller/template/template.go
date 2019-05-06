@@ -121,6 +121,8 @@ var (
 			}
 			return true
 		},
+		"reduceByAlias":              reduceByAlias,
+		"toJson":                     toJson,
 		"escapeLiteralDollar":        escapeLiteralDollar,
 		"shouldConfigureLuaRestyWAF": shouldConfigureLuaRestyWAF,
 		"buildLuaSharedDictionaries": buildLuaSharedDictionaries,
