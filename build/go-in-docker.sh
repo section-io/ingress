@@ -26,6 +26,7 @@ mandatory=(
   REPO_INFO
   TAG
   HOME
+  SECTION_VERSION
 )
 
 missing=false
