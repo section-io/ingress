@@ -121,6 +121,7 @@ var (
 			}
 			return true
 		},
+		"reduceByAlias":              reduceByAlias,
 		"escapeLiteralDollar":        escapeLiteralDollar,
 		"shouldConfigureLuaRestyWAF": shouldConfigureLuaRestyWAF,
 		"buildLuaSharedDictionaries": buildLuaSharedDictionaries,
