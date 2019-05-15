@@ -26,6 +26,7 @@ mandatory=(
   REPO_INFO
   TAG
   HOME
+  SECTION_VERSION
 )
 
 missing=false
@@ -57,6 +58,7 @@ GOBUILD_FLAGS=${GOBUILD_FLAGS:-"-v"}
 PWD=${PWD}
 BUSTED_ARGS=${BUSTED_ARGS:-""}
 REPO_INFO=${REPO_INFO:-local}
+VOLUME_ID=${VOLUME_ID:-""}
 EOF
 
 MINIKUBE_PATH=${HOME}/.minikube
@@ -71,7 +73,7 @@ docker run                                       \
     --rm                                         \
     ${DOCKER_OPTS}                               \
     -v ${HOME}/.kube:/${HOME}/.kube              \
-    -v ${PWD}:/go/src/${PKG}                     \
+    -v ${VOLUME_ID}:/go/src/${PKG}               \
     -v ${PWD}/.gocache:${HOME}/.cache/go-build   \
     -v ${PWD}/bin/${ARCH}:/go/bin/linux_${ARCH}  \
     ${MINIKUBE_VOLUME}                           \
