@@ -42,6 +42,14 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 		return false
 	}
 
+	for idx, c1s := range c1.Servers {
+		klog.Infof("Equal:c1 server %v: %+v", idx, c1s)
+	}
+
+	for idx, c1s := range c2.Servers {
+		klog.Infof("Equal:c2 server %v: %+v", idx, c1s)
+	}
+
 	// Servers are sorted
 	for idx, c1s := range c1.Servers {
 		if !c1s.Equal(c2.Servers[idx]) {
