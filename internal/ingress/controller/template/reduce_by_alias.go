@@ -26,20 +26,22 @@ func toJson(input interface{}) string {
 // reduceByAlias redueses the incoming server blocks to a single
 // server based on the alias
 func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
-	rs := map[string]*ingress.Server{}
-	for _, s := range servers {
+	rs := map[string]ingress.Server{}
+	for _, srv := range servers {
+		s := *srv
 		alias := s.Alias
-		_, ok := rs[alias]
+		rsa, ok := rs[alias]
 		if !ok {
 			rs[alias] = s
 		} else {
-			rs[alias].Alias = fmt.Sprintf("%s %s", rs[alias].Alias, s.Hostname)
+			rsa.Alias = fmt.Sprintf("%s %s", rs[alias].Alias, s.Hostname)
+			rs[alias] = rsa
 		}
 	}
 
 	srv := make([]*ingress.Server, 0)
 	for _, server := range rs {
-		srv = append(srv, server)
+		srv = append(srv, &server)
 	}
 
 	return srv
