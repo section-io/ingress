@@ -657,6 +657,8 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 
 	if klog.V(2) {
 		src, _ := ioutil.ReadFile(cfgPath)
+		
+
 		if !bytes.Equal(src, content) {
 			tmpfile, err := ioutil.TempFile("", "new-nginx-cfg")
 			if err != nil {
@@ -773,8 +775,11 @@ func clearCertificates(config *ingress.Configuration) {
 	for _, server := range config.Servers {
 		copyOfServer := *server
 		copyOfServer.SSLCert = ingress.SSLCert{PemFileName: copyOfServer.SSLCert.PemFileName}
+		klog.Infof("clearCertificates: appending: %+v\n",  copyOfServer.SSLCert)
 		clearedServers = append(clearedServers, &copyOfServer)
 	}
+	klog.Infof("clearCertificates: clearedServers: \n%+v\n",  clearedServers)
+
 	config.Servers = clearedServers
 }
 
@@ -820,9 +825,17 @@ func (n *NGINXController) IsDynamicConfigurationEnough(pcfg *ingress.Configurati
 	copyOfRunningConfig.ControllerPodsCount = 0
 	copyOfPcfg.ControllerPodsCount = 0
 
+
 	if n.cfg.DynamicCertificatesEnabled {
 		clearCertificates(&copyOfRunningConfig)
 		clearCertificates(&copyOfPcfg)
+		klog.Infof("IsDynamicConfigurationEnough: cleared certificates")
+	} else {
+		klog.Infof("IsDynamicConfigurationEnough: did not clear certificates")
+
+	}
+	if len(copyOfRunningConfig.Servers) > 0 {
+	  klog.Infof("IsDynamicConfigurationEnough: copyOfRunningConfig SSL cert: \n%+v\n",  copyOfRunningConfig.Servers[0].SSLCert)
 	}
 
 	return copyOfRunningConfig.Equal(&copyOfPcfg)

@@ -165,7 +165,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		klog.V(3).Infof("No configuration change detected, skipping backend reload.")
 		return nil
 	}
-
+	klog.Infof("Checking IsDynamicConfigurationEnough")
 	if !n.IsDynamicConfigurationEnough(pcfg) {
 		klog.Infof("Configuration changes detected, backend reload required.")
 

@@ -18,6 +18,7 @@ package ingress
 
 import (
 	"k8s.io/ingress-nginx/internal/sets"
+	"k8s.io/klog"
 )
 
 // Equal tests for equality between two Configuration types
@@ -26,36 +27,44 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 		return true
 	}
 	if c1 == nil || c2 == nil {
+		klog.Infof("Equal: c1 or c2 was nil")
 		return false
 	}
 
 	match := compareBackends(c1.Backends, c2.Backends)
 	if !match {
+		klog.Infof("Equal: backends were not equal \n%v\n%v", c1.Backends, c2.Backends)
 		return false
 	}
 
 	if len(c1.Servers) != len(c2.Servers) {
+		klog.Infof("Equal: server length not the same")
 		return false
 	}
 
 	// Servers are sorted
 	for idx, c1s := range c1.Servers {
 		if !c1s.Equal(c2.Servers[idx]) {
+			klog.Infof("Equal: servers not sorted same \n%v\n%v", c1.Servers, c2.Servers)
+			klog.Infof("servers:\ncls: %+v\nc2:%+v", c1.Servers[idx], c2.Servers[idx])
 			return false
 		}
 	}
 
 	match = compareL4Service(c1.TCPEndpoints, c2.TCPEndpoints)
 	if !match {
+		klog.Infof("Equal: l4 TCP service did not match")
 		return false
 	}
 
 	match = compareL4Service(c1.UDPEndpoints, c2.UDPEndpoints)
 	if !match {
+		klog.Infof("Equal: l4 UDP did not match")
 		return false
 	}
 
 	if len(c1.PassthroughBackends) != len(c2.PassthroughBackends) {
+		klog.Infof("Equal: passThroughbackends length did not match")
 		return false
 	}
 
@@ -68,18 +77,21 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 			}
 		}
 		if !found {
+			klog.Infof("Equal: passThroughbackends did not contain matching items")
 			return false
 		}
 	}
 
 	if c1.BackendConfigChecksum != c2.BackendConfigChecksum {
+		klog.Infof("Equal: backendConfigChecksum did not match")
 		return false
 	}
 
 	if c1.ControllerPodsCount != c2.ControllerPodsCount {
+		klog.Infof("Equal: ControllerPodsCount did not match")
 		return false
 	}
-
+	klog.Infof("Equal: success")
 	return true
 }
 
@@ -89,9 +101,11 @@ func (b1 *Backend) Equal(b2 *Backend) bool {
 		return true
 	}
 	if b1 == nil || b2 == nil {
+		klog.Infof("Equal Backend: b1 or b2 was nil")
 		return false
 	}
 	if b1.Name != b2.Name {
+		klog.Infof("Equal Backend: b1 name did not match be name ")
 		return false
 	}
 	if b1.NoServer != b2.NoServer {
@@ -266,34 +280,43 @@ func (s1 *Server) Equal(s2 *Server) bool {
 		return false
 	}
 	if s1.Hostname != s2.Hostname {
+		klog.Infof("Equal: hostname not match \n%v\n%v", s1.Hostname, s2.Hostname)
 		return false
 	}
 	if s1.SSLPassthrough != s2.SSLPassthrough {
 		return false
 	}
 	if !(&s1.SSLCert).Equal(&s2.SSLCert) {
+		klog.Infof("Equal: SSLCert not match \n%v\n%v", s1.SSLCert, s2.SSLCert)
 		return false
 	}
 	if s1.Alias != s2.Alias {
+		klog.Infof("Equal: Alias not match \n%v\n%v", s1.Alias, s2.Alias)
 		return false
 	}
 	if s1.RedirectFromToWWW != s2.RedirectFromToWWW {
+		klog.Infof("Equal: RedirectFromToWWW not match \n%v\n%v", s1.RedirectFromToWWW, s2.RedirectFromToWWW)
 		return false
 	}
 	if !(&s1.CertificateAuth).Equal(&s2.CertificateAuth) {
+		klog.Infof("Equal: CertificateAuth not match \n%v\n%v", s1.CertificateAuth, s2.CertificateAuth)
 		return false
 	}
 	if s1.ServerSnippet != s2.ServerSnippet {
+		klog.Infof("Equal: ServerSnippet not match \n%v\n%v", s1.ServerSnippet, s2.ServerSnippet)
 		return false
 	}
 	if s1.SSLCiphers != s2.SSLCiphers {
+		klog.Infof("Equal: SSLCiphers not match \n%v\n%v", s1.SSLCiphers, s2.SSLCiphers)
 		return false
 	}
 	if s1.AuthTLSError != s2.AuthTLSError {
+		klog.Infof("Equal: AuthTLSError not match \n%v\n%v", s1.AuthTLSError, s2.AuthTLSError)
 		return false
 	}
 
 	if len(s1.Locations) != len(s2.Locations) {
+		klog.Infof("Equal: Locations not match \n%v\n%v", s1.Locations, s2.Locations)
 		return false
 	}
 
@@ -512,6 +535,7 @@ func (s1 *SSLCert) Equal(s2 *SSLCert) bool {
 		return false
 	}
 	if s1.PemFileName != s2.PemFileName {
+		klog.Infof("SSLCert Equal: PemFileName not match: \n%v\n%v", s1.PemFileName, s2.PemFileName)
 		return false
 	}
 	if s1.PemSHA != s2.PemSHA {
@@ -521,9 +545,11 @@ func (s1 *SSLCert) Equal(s2 *SSLCert) bool {
 		return false
 	}
 	if s1.FullChainPemFileName != s2.FullChainPemFileName {
+		klog.Infof("SSLCert Equal: FullChainPemFileName not match: \n%v\n%v", s1.FullChainPemFileName, s2.FullChainPemFileName)
 		return false
 	}
 	if s1.PemCertKey != s2.PemCertKey {
+		klog.Infof("SSLCert Equal: PemCertKey not match: \n%v\n%v", s1.PemCertKey, s2.PemCertKey)
 		return false
 	}
 
@@ -556,14 +582,16 @@ func compareEndpoints(a, b []Endpoint) bool {
 var compareBackendsFunc = func(e1, e2 interface{}) bool {
 	b1, ok := e1.(*Backend)
 	if !ok {
+		klog.Infof("compareBackends: e1 type not Backend")
 		return false
 	}
 
 	b2, ok := e2.(*Backend)
 	if !ok {
+		klog.Infof("compareBackends: e2 type not Backend")
 		return false
 	}
-
+	// klog.Infof("compareBackends: \nb1: %v\nb2: %v", b1, b2)
 	return b1.Equal(b2)
 }
 
