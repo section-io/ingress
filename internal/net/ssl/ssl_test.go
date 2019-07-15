@@ -22,6 +22,7 @@ import (
 	"crypto/rand"
 	cryptorand "crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -29,10 +30,15 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/kubernetes/pkg/util/filesystem"
 
 	"k8s.io/ingress-nginx/internal/file"
 )
@@ -139,20 +145,33 @@ func TestCACert(t *testing.T) {
 }
 
 func TestGetFakeSSLCert(t *testing.T) {
-	k, c := GetFakeSSLCert()
-	if len(k) == 0 {
-		t.Fatalf("expected a valid key")
+	fs := newFS(t)
+
+	sslCert := GetFakeSSLCert(fs)
+
+	if len(sslCert.PemCertKey) == 0 {
+		t.Fatalf("expected PemCertKey to not be empty")
 	}
-	if len(c) == 0 {
-		t.Fatalf("expected a valid certificate")
+
+	if len(sslCert.PemFileName) == 0 {
+		t.Fatalf("expected PemFileName to not be empty")
+	}
+
+	if len(sslCert.CN) != 2 {
+		t.Fatalf("expected 2 entries in CN, but got %v", len(sslCert.CN))
+	}
+
+	if sslCert.CN[0] != "Kubernetes Ingress Controller Fake Certificate" {
+		t.Fatalf("expected common name to be \"Kubernetes Ingress Controller Fake Certificate\" but got %v", sslCert.CN[0])
+	}
+
+	if sslCert.CN[1] != "ingress.local" {
+		t.Fatalf("expected a DNS name \"ingress.local\" but got: %v", sslCert.CN[1])
 	}
 }
 
 func TestConfigureCACert(t *testing.T) {
-	fs, err := file.NewFakeFS()
-	if err != nil {
-		t.Fatalf("unexpected error creating filesystem: %v", err)
-	}
+	fs := newFS(t)
 
 	cn := "demo-ca"
 	_, ca, err := generateRSACerts(cn)
@@ -352,4 +371,88 @@ func encodeCertPEM(cert *x509.Certificate) []byte {
 		Bytes: cert.Raw,
 	}
 	return pem.EncodeToMemory(&block)
+}
+
+func fakeCertificate(t *testing.T, fs filesystem.Filesystem) []byte {
+	cert, key := getFakeHostSSLCert("localhost")
+	fd, err := fs.Create("/key.crt")
+	if err != nil {
+		t.Errorf("failed to write test key: %v", err)
+	}
+	fd.Write(cert)
+	fd, err = fs.Create("/key.key")
+	if err != nil {
+		t.Errorf("failed to write test key: %v", err)
+	}
+	fd.Write(key)
+	return cert
+}
+
+func dialTestServer(port string, rootCertificates ...[]byte) error {
+	roots := x509.NewCertPool()
+	for _, cert := range rootCertificates {
+		ok := roots.AppendCertsFromPEM(cert)
+		if !ok {
+			return fmt.Errorf("failed to add root certificate")
+		}
+	}
+	resp, err := tls.Dial("tcp", "localhost:"+port, &tls.Config{
+		RootCAs: roots,
+	})
+	if err != nil {
+		return err
+	}
+	if resp.Handshake() != nil {
+		return fmt.Errorf("TLS handshake should succeed: %v", err)
+	}
+	return nil
+}
+
+func TestTLSKeyReloader(t *testing.T) {
+	fs := filesystem.NewFakeFs()
+	cert := fakeCertificate(t, fs)
+
+	watcher := TLSListener{
+		certificatePath: "/key.crt",
+		keyPath:         "/key.key",
+		fs:              fs,
+		lock:            sync.Mutex{},
+	}
+	watcher.load()
+
+	s := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	s.Config.TLSConfig = watcher.TLSConfig()
+	s.Listener = tls.NewListener(s.Listener, s.Config.TLSConfig)
+	go s.Start()
+	defer s.Close()
+	port := strings.Split(s.Listener.Addr().String(), ":")[1]
+
+	t.Run("without the trusted certificate", func(t *testing.T) {
+		if dialTestServer(port) == nil {
+			t.Errorf("TLS dial should fail")
+		}
+	})
+
+	t.Run("with the certificate trustes as root certificate", func(t *testing.T) {
+		if err := dialTestServer(port, cert); err != nil {
+			t.Errorf("TLS dial should succeed, got error: %v", err)
+		}
+	})
+
+	t.Run("with a new certificate", func(t *testing.T) {
+		newCert := fakeCertificate(t, fs)
+		t.Run("when the certificate is not reloaded", func(t *testing.T) {
+			if dialTestServer(port, newCert) == nil {
+				t.Errorf("TLS dial should fail")
+			}
+		})
+		// simulate watch.NewFileWatcher to call the load function
+		watcher.load()
+		t.Run("when the certificate is reloaded", func(t *testing.T) {
+			if err := dialTestServer(port, newCert); err != nil {
+				t.Errorf("TLS dial should succeed, got error: %v", err)
+			}
+		})
+	})
+
 }

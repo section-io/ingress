@@ -18,6 +18,7 @@ package framework
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -25,8 +26,32 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
+
+// GetLbAlgorithm returns algorithm identifier for the given backend
+func (f *Framework) GetLbAlgorithm(serviceName string, servicePort int) (string, error) {
+	backendName := fmt.Sprintf("%s-%s-%v", f.Namespace, serviceName, servicePort)
+	cmd := fmt.Sprintf("/dbg backends get %s", backendName)
+
+	output, err := f.ExecIngressPod(cmd)
+	if err != nil {
+		return "", err
+	}
+
+	var backend map[string]interface{}
+	err = json.Unmarshal([]byte(output), &backend)
+	if err != nil {
+		return "", err
+	}
+
+	algorithm, ok := backend["load-balance"].(string)
+	if !ok {
+		return "", fmt.Errorf("error while accessing load-balance field of backend")
+	}
+
+	return algorithm, nil
+}
 
 // ExecIngressPod executes a command inside the first container in ingress controller running pod
 func (f *Framework) ExecIngressPod(command string) (string, error) {
@@ -39,7 +64,7 @@ func (f *Framework) ExecIngressPod(command string) (string, error) {
 }
 
 // ExecCommand executes a command inside a the first container in a running pod
-func (f *Framework) ExecCommand(pod *v1.Pod, command string) (string, error) {
+func (f *Framework) ExecCommand(pod *corev1.Pod, command string) (string, error) {
 	var (
 		execOut bytes.Buffer
 		execErr bytes.Buffer
