@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-
 	"k8s.io/ingress-nginx/internal/ingress"
 )
 
@@ -26,9 +25,11 @@ func toJson(input interface{}) string {
 // reduceByAlias redueses the incoming server blocks to a single
 // server based on the alias
 func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
+	// The fallback server `_` has no Alias, so this relies on us using an Alias
+	// for all ingress objects so there is no overlap. 
 	rs := map[string]ingress.Server{}
 	for _, srv := range servers {
-		s := *srv
+		s := *srv //shallow copy seems acceptable for this scenario
 		alias := s.Alias
 		rsa, ok := rs[alias]
 		if !ok {
@@ -41,7 +42,8 @@ func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
 
 	srv := make([]*ingress.Server, 0)
 	for _, server := range rs {
-		srv = append(srv, &server)
+		val := server
+		srv = append(srv, &val)
 	}
 
 	return srv
