@@ -21,6 +21,18 @@ import (
 	"k8s.io/klog"
 )
 
+func logServers(servers []*Server, label string) {
+	for idx, c1s := range servers {
+		klog.Infof("Equal: %s server %v: %+v", label, idx, c1s.Hostname)
+	}
+}
+
+func logBackends(backends []*Backend, label string) {
+	for idx, b := range backends {
+		klog.Infof("Equal: %s backend %v: %+v", label, idx, b.Name)
+	}
+}
+
 // Equal tests for equality between two Configuration types
 func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	if c1 == c2 {
@@ -34,6 +46,8 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	match := compareBackends(c1.Backends, c2.Backends)
 	if !match {
 		klog.Infof("Equal: backends were not equal \n%v\n%v", c1.Backends, c2.Backends)
+		logBackends(c1.Backends, "back1")
+		logBackends(c2.Backends, "back2")
 		return false
 	}
 
@@ -42,18 +56,12 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 		return false
 	}
 
-	for idx, c1s := range c1.Servers {
-		klog.Infof("Equal:c1 server %v: %+v", idx, c1s)
-	}
-
-	for idx, c1s := range c2.Servers {
-		klog.Infof("Equal:c2 server %v: %+v", idx, c1s)
-	}
-
 	// Servers are sorted
 	for idx, c1s := range c1.Servers {
 		if !c1s.Equal(c2.Servers[idx]) {
 			klog.Infof("Equal: servers not sorted same \n%v\n%v", c1.Servers, c2.Servers)
+			logServers(c1.Servers, "c1")
+			logServers(c2.Servers, "c2")
 			klog.Infof("servers:\ncls: %+v\nc2:%+v", c1.Servers[idx], c2.Servers[idx])
 			return false
 		}
@@ -113,7 +121,7 @@ func (b1 *Backend) Equal(b2 *Backend) bool {
 		return false
 	}
 	if b1.Name != b2.Name {
-		klog.Infof("Equal Backend: b1 name did not match be name ")
+		klog.Infof("Equal Backend: b1 name (%v) did not match b2 name (%v)", b1.Name, b2.Name)
 		return false
 	}
 	if b1.NoServer != b2.NoServer {
@@ -153,6 +161,7 @@ func (b1 *Backend) Equal(b2 *Backend) bool {
 
 	match := compareEndpoints(b1.Endpoints, b2.Endpoints)
 	if !match {
+		klog.Infof("Equal Backend: endpoints did not match. b1.Name:%v  b2.Name:%v", b1.Name, b2.Name)
 		return false
 	}
 
@@ -240,6 +249,7 @@ func (e1 *Endpoint) Equal(e2 *Endpoint) bool {
 		return false
 	}
 	if e1.Address != e2.Address {
+		klog.Infof("Equal Endpoint: Address not match e1 %v  e2 %v)", e1.Address, e2.Address)
 		return false
 	}
 	if e1.Port != e2.Port {
