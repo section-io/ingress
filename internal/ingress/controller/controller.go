@@ -111,7 +111,9 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 // configuration file and passes the resulting data structures to the backend
 // (OnUpdate) when a reload is deemed necessary.
 func (n *NGINXController) syncIngress(interface{}) error {
+	klog.Infof("Attempting to syncIngress, checking rate limiter")
 	n.syncRateLimiter.Accept()
+	klog.Infof("executing syncIngress")
 
 	if n.syncQueue.IsShuttingDown() {
 		return nil
@@ -213,7 +215,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	err := wait.ExponentialBackoff(retry, func() (bool, error) {
 		err := configureDynamically(pcfg, n.cfg.DynamicCertificatesEnabled)
 		if err == nil {
-			klog.V(2).Infof("Dynamic reconfiguration succeeded.")
+			klog.Infof("Dynamic reconfiguration succeeded.")
 			return true, nil
 		}
 
@@ -230,7 +232,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	n.metricCollector.RemoveMetrics(ri, re)
 
 	n.runningConfig = pcfg
-
+	klog.Infof("syncIngress finished running, no errors")
 	return nil
 }
 

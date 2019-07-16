@@ -246,6 +246,7 @@ func (e1 *Endpoint) Equal(e2 *Endpoint) bool {
 		return true
 	}
 	if e1 == nil || e2 == nil {
+		klog.Infof("Equal Endpoint: got nil endpoint)")
 		return false
 	}
 	if e1.Address != e2.Address {
@@ -253,17 +254,21 @@ func (e1 *Endpoint) Equal(e2 *Endpoint) bool {
 		return false
 	}
 	if e1.Port != e2.Port {
+		klog.Infof("Equal Endpoint: Port not match e1 %v  e2 %v)", e1.Port, e2.Port)
 		return false
 	}
 
 	if e1.Target != e2.Target {
 		if e1.Target == nil || e2.Target == nil {
+			klog.Infof("Equal Endpoint: got nil Target)")
 			return false
 		}
 		if e1.Target.UID != e2.Target.UID {
+			klog.Infof("Equal Endpoint: target.UID not match e1 %v  e2 %v)", e1.Target.UID, e2.Target.UID)
 			return false
 		}
 		if e1.Target.ResourceVersion != e2.Target.ResourceVersion {
+			klog.Infof("Equal Endpoint: target.ResourceVersion not match e1 %v  e2 %v)", e1.Target.ResourceVersion, e2.Target.ResourceVersion)
 			return false
 		}
 	}
