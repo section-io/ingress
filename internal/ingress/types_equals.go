@@ -52,7 +52,7 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	}
 
 	if len(c1.Servers) != len(c2.Servers) {
-		klog.Infof("Equal: server length not the same")
+		klog.Infof("Equal: server length not the same. c1:%v items, c2:%v items", len(c1.Servers), len(c2.Servers))
 		return false
 	}
 

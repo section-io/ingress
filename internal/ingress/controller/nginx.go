@@ -778,7 +778,6 @@ func clearCertificates(config *ingress.Configuration) {
 		klog.Infof("clearCertificates: appending: %+v\n",  copyOfServer.SSLCert)
 		clearedServers = append(clearedServers, &copyOfServer)
 	}
-	klog.Infof("clearCertificates: clearedServers: \n%+v\n",  clearedServers)
 
 	config.Servers = clearedServers
 }
