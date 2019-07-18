@@ -60,8 +60,8 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	for idx, c1s := range c1.Servers {
 		if !c1s.Equal(c2.Servers[idx]) {
 			klog.Infof("Equal: servers not sorted same \n%v\n%v", c1.Servers, c2.Servers)
-			logServers(c1.Servers, "c1")
-			logServers(c2.Servers, "c2")
+			// logServers(c1.Servers, "c1")
+			// logServers(c2.Servers, "c2")
 			klog.Infof("servers:\ncls: %+v\nc2:%+v", c1.Servers[idx], c2.Servers[idx])
 			return false
 		}
@@ -325,9 +325,9 @@ func (s1 *Server) Equal(s2 *Server) bool {
 		klog.Infof("Equal: CertificateAuth not match \n%v\n%v", s1.CertificateAuth, s2.CertificateAuth)
 		return false
 	}
-	if s1.ServerSnippet != s2.ServerSnippet {
-		klog.Infof("Equal: ServerSnippet not match \n%v\n%v", s1.ServerSnippet, s2.ServerSnippet)
-		return false
+	// if s1.ServerSnippet != s2.ServerSnippet {
+	// 	klog.Infof("Equal: ServerSnippet not match \n%v\n%v", s1.ServerSnippet, s2.ServerSnippet)
+	// 	return false
 	}
 	if s1.SSLCiphers != s2.SSLCiphers {
 		klog.Infof("Equal: SSLCiphers not match \n%v\n%v", s1.SSLCiphers, s2.SSLCiphers)

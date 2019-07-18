@@ -835,7 +835,7 @@ func (n *NGINXController) IsDynamicConfigurationEnough(pcfg *ingress.Configurati
 
 	}
 	if len(copyOfRunningConfig.Servers) > 0 {
-	  klog.Infof("IsDynamicConfigurationEnough: copyOfRunningConfig SSL cert: \n%+v\n",  copyOfRunningConfig.Servers[0].SSLCert)
+	//   klog.Infof("IsDynamicConfigurationEnough: copyOfRunningConfig SSL cert: \n%+v\n",  copyOfRunningConfig.Servers[0].SSLCert)
 	}
 
 	return copyOfRunningConfig.Equal(&copyOfPcfg)
