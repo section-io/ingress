@@ -127,6 +127,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 	hosts := sets.NewString()
 
+	klog.Infof("syncIngress: have %v servers", len(servers))
 	for _, server := range servers {
 		if !hosts.Has(server.Hostname) {
 			hosts.Insert(server.Hostname)
@@ -139,6 +140,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 			continue
 		}
 
+		klog.Infof("syncIngress: have %v server.locations", len(server.locations))
 		for _, loc := range server.Locations {
 			if loc.Path != rootLocation {
 				klog.Warningf("Ignoring SSL Passthrough for location %q in server %q", loc.Path, server.Hostname)
@@ -164,6 +166,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		ControllerPodsCount:   n.store.GetRunningControllerPodsCount(),
 	}
 
+	klog.Infof("syncIngress: comparing config the first time")
 	if n.runningConfig.Equal(pcfg) {
 		klog.V(3).Infof("No configuration change detected, skipping backend reload.")
 		return nil
@@ -198,6 +201,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		}
 	}
 
+	klog.Infof("syncIngress: comparing config the second time")
 	isFirstSync := n.runningConfig.Equal(&ingress.Configuration{})
 	if isFirstSync {
 		// For the initial sync it always takes some time for NGINX to start listening
@@ -214,6 +218,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 	}
 
 	err := wait.ExponentialBackoff(retry, func() (bool, error) {
+		klog.Infof("syncIngress: calling configureDynamically")
 		err := configureDynamically(pcfg, n.cfg.DynamicCertificatesEnabled)
 		if err == nil {
 			klog.Infof("Dynamic reconfiguration succeeded.")
@@ -228,8 +233,11 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		return err
 	}
 
+	klog.Infof("syncIngress: calling getRemovedIngresses")
 	ri := getRemovedIngresses(n.runningConfig, pcfg)
+	klog.Infof("syncIngress: calling getRemovedHosts")
 	re := getRemovedHosts(n.runningConfig, pcfg)
+	klog.Infof("syncIngress: calling RemoveMetrics")
 	n.metricCollector.RemoveMetrics(ri, re)
 
 	n.runningConfig = pcfg

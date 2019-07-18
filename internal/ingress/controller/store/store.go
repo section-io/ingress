@@ -354,6 +354,7 @@ func New(checkOCSP bool,
 			}
 			recorder.Eventf(ing, corev1.EventTypeNormal, "CREATE", fmt.Sprintf("Ingress %s/%s", ing.Namespace, ing.Name))
 
+			klog.Infof("syncIngress called by ingEventHandler add")
 			store.syncIngress(ing)
 			store.updateSecretIngressMap(ing)
 			store.syncSecrets(ing)
@@ -394,6 +395,7 @@ func New(checkOCSP bool,
 				return
 			}
 
+			klog.Infof("syncIngress called by ingEventHandler update")
 			store.syncIngress(curIng)
 			store.updateSecretIngressMap(curIng)
 			store.syncSecrets(curIng)
@@ -423,6 +425,7 @@ func New(checkOCSP bool,
 						klog.Errorf("could not find Ingress %v in local store", ingKey)
 						continue
 					}
+					klog.Infof("syncIngress called by secrEventHandler add")
 					store.syncIngress(ing)
 					store.syncSecrets(ing)
 				}
@@ -450,6 +453,7 @@ func New(checkOCSP bool,
 							klog.Errorf("could not find Ingress %v in local store", ingKey)
 							continue
 						}
+						klog.Infof("syncIngress called by secrEventHandler update")
 						store.syncIngress(ing)
 						store.syncSecrets(ing)
 					}
@@ -489,6 +493,7 @@ func New(checkOCSP bool,
 						klog.Errorf("could not find Ingress %v in local store", ingKey)
 						continue
 					}
+					klog.Infof("syncIngress called by secrEventHandler delete")
 					store.syncIngress(ing)
 				}
 				updateCh.In() <- Event{
@@ -559,6 +564,7 @@ func New(checkOCSP bool,
 							klog.Errorf("could not find Ingress %v in local store: %v", key, err)
 							continue
 						}
+						klog.Infof("syncIngress called by cmEventHandler update")
 						store.syncIngress(ing)
 					}
 
@@ -627,7 +633,7 @@ func isCatchAllIngress(spec extensions.IngressSpec) bool {
 // annotation to a go struct
 func (s *k8sStore) syncIngress(ing *extensions.Ingress) {
 	key := k8s.MetaNamespaceKey(ing)
-	klog.V(3).Infof("updating annotations information for ingress %v", key)
+	klog.Infof("updating annotations information for ingress %v", key)
 
 	copyIng := &extensions.Ingress{}
 	ing.ObjectMeta.DeepCopyInto(&copyIng.ObjectMeta)
