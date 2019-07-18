@@ -110,7 +110,8 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 // syncIngress collects all the pieces required to assemble the NGINX
 // configuration file and passes the resulting data structures to the backend
 // (OnUpdate) when a reload is deemed necessary.
-func (n *NGINXController) syncIngress(interface{}) error {
+func (n *NGINXController) syncIngress(why interface{}) error {
+	klog.Infof("syncIngress: why: %v", why)
 	klog.Infof("Attempting to syncIngress, checking rate limiter")
 	n.syncRateLimiter.Accept()
 	klog.Infof("executing syncIngress")

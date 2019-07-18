@@ -162,6 +162,7 @@ Error loading new template: %v
 
 		n.t = template
 		klog.Info("New NGINX configuration template loaded.")
+		klog.Infof("EnqueueTask: template-change")
 		n.syncQueue.EnqueueTask(task.GetDummyObject("template-change"))
 	}
 
@@ -203,6 +204,7 @@ Error loading new template: %v
 	for _, f := range filesToWatch {
 		_, err = watch.NewFileWatcher(f, func() {
 			klog.Infof("File %v changed. Reloading NGINX", f)
+			klog.Infof("EnqueueTask: file-change: %v", f)
 			n.syncQueue.EnqueueTask(task.GetDummyObject("file-change"))
 		})
 		if err != nil {
@@ -313,6 +315,7 @@ func (n *NGINXController) Start() {
 
 	go n.syncQueue.Run(time.Second, n.stopCh)
 	// force initial sync
+	klog.Infof("EnqueueTask: initial-sync")
 	n.syncQueue.EnqueueTask(task.GetDummyObject("initial-sync"))
 
 	// In case of error the temporal configuration file will
@@ -359,10 +362,12 @@ func (n *NGINXController) Start() {
 				klog.V(3).Infof("Event %v received - object %v", evt.Type, evt.Obj)
 				if evt.Type == store.ConfigurationEvent {
 					// TODO: is this necessary? Consider removing this special case
+					klog.Infof("EnqueueTask: configmap-change: %v - %v", evt.Type, evt.Obj)
 					n.syncQueue.EnqueueTask(task.GetDummyObject("configmap-change"))
 					continue
 				}
 
+				klog.Infof("EnqueueTask: skippable-task: %v", evt.Obj)
 				n.syncQueue.EnqueueSkippableTask(evt.Obj)
 			} else {
 				klog.Warningf("Unexpected event type received %T", event)
@@ -657,7 +662,6 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 
 	if klog.V(2) {
 		src, _ := ioutil.ReadFile(cfgPath)
-		
 
 		if !bytes.Equal(src, content) {
 			tmpfile, err := ioutil.TempFile("", "new-nginx-cfg")
@@ -775,9 +779,10 @@ func clearCertificates(config *ingress.Configuration) {
 	for _, server := range config.Servers {
 		copyOfServer := *server
 		copyOfServer.SSLCert = ingress.SSLCert{PemFileName: copyOfServer.SSLCert.PemFileName}
-		klog.Infof("clearCertificates: appending: %+v\n",  copyOfServer.SSLCert)
+		klog.Infof("clearCertificates: appending: %+v\n", copyOfServer.SSLCert)
 		clearedServers = append(clearedServers, &copyOfServer)
 	}
+	klog.Infof("clearCertificates: clearedServers: \n%+v\n", clearedServers)
 
 	config.Servers = clearedServers
 }
@@ -824,7 +829,6 @@ func (n *NGINXController) IsDynamicConfigurationEnough(pcfg *ingress.Configurati
 	copyOfRunningConfig.ControllerPodsCount = 0
 	copyOfPcfg.ControllerPodsCount = 0
 
-
 	if n.cfg.DynamicCertificatesEnabled {
 		clearCertificates(&copyOfRunningConfig)
 		clearCertificates(&copyOfPcfg)
@@ -834,7 +838,7 @@ func (n *NGINXController) IsDynamicConfigurationEnough(pcfg *ingress.Configurati
 
 	}
 	if len(copyOfRunningConfig.Servers) > 0 {
-	//   klog.Infof("IsDynamicConfigurationEnough: copyOfRunningConfig SSL cert: \n%+v\n",  copyOfRunningConfig.Servers[0].SSLCert)
+		//   klog.Infof("IsDynamicConfigurationEnough: copyOfRunningConfig SSL cert: \n%+v\n",  copyOfRunningConfig.Servers[0].SSLCert)
 	}
 
 	return copyOfRunningConfig.Equal(&copyOfPcfg)
