@@ -313,6 +313,7 @@ func (n *NGINXController) Start() {
 	klog.Info("Starting NGINX process")
 	n.start(cmd)
 
+	time.Sleep(10 * time.Second)
 	go n.syncQueue.Run(time.Second, n.stopCh)
 	// force initial sync
 	klog.Infof("EnqueueTask: initial-sync")
