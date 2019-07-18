@@ -360,31 +360,39 @@ func (l1 *Location) Equal(l2 *Location) bool {
 		return true
 	}
 	if l1 == nil || l2 == nil {
+		klog.Infof("Equal:Location l1 or l2 was nil.")
 		return false
 	}
 	if l1.Path != l2.Path {
+		klog.Infof("Equal:Location path is not equal. l1:%v  l2:%v", l1.Path, l2.Path)
 		return false
 	}
 	if l1.IsDefBackend != l2.IsDefBackend {
+		klog.Infof("Equal:Location IsDefBackend is not equal. l1:%v  l2:%v", l1.IsDefBackend, l2.IsDefBackend)
 		return false
 	}
 	if l1.Backend != l2.Backend {
+		klog.Infof("Equal:Location Backend is not equal. l1:%v  l2:%v", l1.Backend, l2.Backend)
 		return false
 	}
 
 	if l1.Service != l2.Service {
 		if l1.Service == nil || l2.Service == nil {
+			klog.Infof("Equal:Location l1 or l2 Service was nil.")
 			return false
 		}
 		if l1.Service.GetNamespace() != l2.Service.GetNamespace() {
+			klog.Infof("Equal:Location service namespace is not equal. l1:%v  l2:%v", l1.Service.GetNamespace(), l2.Service.GetNamespace())
 			return false
 		}
 		if l1.Service.GetName() != l2.Service.GetName() {
+			klog.Infof("Equal:Location Service.GetName is not equal. l1:%v  l2:%v", l1.Service.GetName(), l2.Service.GetName())
 			return false
 		}
 	}
 
 	if l1.Port.StrVal != l2.Port.StrVal {
+		klog.Infof("Equal:Location Port StrVal not equal. l1:%v  l2:%v", l1.Port.StrVal, l2.Port.StrVal)
 		return false
 	}
 	if !(&l1.BasicDigestAuth).Equal(&l2.BasicDigestAuth) {
@@ -409,6 +417,7 @@ func (l1 *Location) Equal(l2 *Location) bool {
 		return false
 	}
 	if !(&l1.Rewrite).Equal(&l2.Rewrite) {
+		klog.Infof("Equal:Location rewrite not equal. l1:%v  l2:%v", &l1.Rewrite, &l2.Rewrite)
 		return false
 	}
 	if !(&l1.Whitelist).Equal(&l2.Whitelist) {
@@ -421,6 +430,7 @@ func (l1 *Location) Equal(l2 *Location) bool {
 		return false
 	}
 	if l1.ConfigurationSnippet != l2.ConfigurationSnippet {
+		klog.Infof("Equal:Location ConfigurationSnippet not equal. l1:%v  l2:%v", l1.ConfigurationSnippet, l2.ConfigurationSnippet)
 		return false
 	}
 	if l1.ClientBodyBufferSize != l2.ClientBodyBufferSize {
