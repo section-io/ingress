@@ -171,9 +171,9 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		klog.V(3).Infof("No configuration change detected, skipping backend reload.")
 		return nil
 	}
-	klog.Infof("Checking IsDynamicConfigurationEnough")
+	klog.Infof("syncIngress: Checking IsDynamicConfigurationEnough")
 	if !n.IsDynamicConfigurationEnough(pcfg) {
-		klog.Infof("Configuration changes detected, backend reload required.")
+		klog.Infof("syncIngress: Configuration changes detected, backend reload required.")
 
 		hash, _ := hashstructure.Hash(pcfg, &hashstructure.HashOptions{
 			TagName: "json",
@@ -181,17 +181,19 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
+		klog.Infof("syncIngress: calling OnUpdate")
 		err := n.OnUpdate(*pcfg)
 		if err != nil {
 			n.metricCollector.IncReloadErrorCount()
 			n.metricCollector.ConfigSuccess(hash, false)
-			klog.Errorf("Unexpected failure reloading the backend:\n%v", err)
+			klog.Errorf("syncIngress: Unexpected failure reloading the backend:\n%v", err)
 			return err
 		}
 
+		klog.Infof("syncIngress: calling SetHosts")
 		n.metricCollector.SetHosts(hosts)
 
-		klog.Infof("Backend successfully reloaded.")
+		klog.Infof("syncIngress: Backend successfully reloaded.")
 		n.metricCollector.ConfigSuccess(hash, true)
 		n.metricCollector.IncReloadCount()
 
@@ -206,7 +208,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 	if isFirstSync {
 		// For the initial sync it always takes some time for NGINX to start listening
 		// For large configurations it might take a while so we loop and back off
-		klog.Info("Initial sync, sleeping for 1 second.")
+		klog.Info("syncIngress: Initial sync, sleeping for 1 second.")
 		time.Sleep(1 * time.Second)
 	}
 
@@ -217,19 +219,20 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		Jitter:   0.1,
 	}
 
+	klog.Infof("syncIngress: calling ExponentialBackoff")
 	err := wait.ExponentialBackoff(retry, func() (bool, error) {
 		klog.Infof("syncIngress: calling configureDynamically")
 		err := configureDynamically(pcfg, n.cfg.DynamicCertificatesEnabled)
 		if err == nil {
-			klog.Infof("Dynamic reconfiguration succeeded.")
+			klog.Infof("syncIngress: Dynamic reconfiguration succeeded.")
 			return true, nil
 		}
 
-		klog.Warningf("Dynamic reconfiguration failed: %v", err)
+		klog.Warningf("syncIngress: Dynamic reconfiguration failed: %v", err)
 		return false, err
 	})
 	if err != nil {
-		klog.Errorf("Unexpected failure reconfiguring NGINX:\n%v", err)
+		klog.Errorf("syncIngress: Unexpected failure reconfiguring NGINX:\n%v", err)
 		return err
 	}
 
