@@ -140,7 +140,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 			continue
 		}
 
-		klog.Infof("syncIngress: have %v server.locations", len(server.locations))
+		klog.Infof("syncIngress: have %v server.Locations", len(server.Locations))
 		for _, loc := range server.Locations {
 			if loc.Path != rootLocation {
 				klog.Warningf("Ignoring SSL Passthrough for location %q in server %q", loc.Path, server.Hostname)
