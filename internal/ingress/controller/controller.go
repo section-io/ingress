@@ -111,7 +111,7 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 // configuration file and passes the resulting data structures to the backend
 // (OnUpdate) when a reload is deemed necessary.
 func (n *NGINXController) syncIngress(why interface{}) error {
-	klog.Infof("syncIngress: why: %v", why)
+	klog.Infof("syncIngress: why(%T): %v", why, why)
 	klog.Infof("Attempting to syncIngress, checking rate limiter")
 	n.syncRateLimiter.Accept()
 	klog.Infof("executing syncIngress")
@@ -181,6 +181,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
+		klog.Infof("syncIngress: Hash: %v", hash)
 		klog.Infof("syncIngress: calling OnUpdate")
 		err := n.OnUpdate(*pcfg)
 		if err != nil {
