@@ -59,7 +59,7 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	// Servers are sorted
 	for idx, c1s := range c1.Servers {
 		if !c1s.Equal(c2.Servers[idx]) {
-			klog.Infof("Equal: servers not sorted same \n%v\n%v", c1.Servers, c2.Servers)
+			klog.Infof("Equal: servers not sorted same")
 			// logServers(c1.Servers, "c1")
 			// logServers(c2.Servers, "c2")
 			klog.Infof("servers:\ncls: %+v\nc2:%+v", c1.Servers[idx], c2.Servers[idx])
@@ -339,13 +339,14 @@ func (s1 *Server) Equal(s2 *Server) bool {
 	}
 
 	if len(s1.Locations) != len(s2.Locations) {
-		klog.Infof("Equal: Locations not match \n%v\n%v", s1.Locations, s2.Locations)
+		klog.Infof("Equal:Server Locations not match \n%v\n%v", s1.Locations, s2.Locations)
 		return false
 	}
 
 	// Location are sorted
 	for idx, s1l := range s1.Locations {
 		if !s1l.Equal(s2.Locations[idx]) {
+			klog.Infof("Equal:Server Locations are not sorted the same  \n%v\n%v", s1l, s2.Locations[idx])
 			return false
 		}
 	}
