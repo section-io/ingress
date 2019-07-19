@@ -614,7 +614,7 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 	}
 
 	cfg.SSLDHParam = sslDHParam
-
+	klog.Infof("Length of proposed ingressCfg BEFORE template application: %v", len(ingressCfg.Servers))
 	tc := ngx_config.TemplateConfig{
 		ProxySetHeaders:            setHeaders,
 		AddHeaders:                 addHeaders,
@@ -692,6 +692,7 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 	if err != nil {
 		return err
 	}
+	klog.Infof("Length of proposed ingressCfg AFTER template application: %v", len(ingressCfg.Servers))
 
 	o, err := nginxExecCommand("-s", "reload").CombinedOutput()
 	if err != nil {

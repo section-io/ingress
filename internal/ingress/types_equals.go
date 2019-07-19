@@ -325,10 +325,10 @@ func (s1 *Server) Equal(s2 *Server) bool {
 		klog.Infof("Equal: CertificateAuth not match \n%v\n%v", s1.CertificateAuth, s2.CertificateAuth)
 		return false
 	}
-	// if s1.ServerSnippet != s2.ServerSnippet {
-	// 	klog.Infof("Equal: ServerSnippet not match \n%v\n%v", s1.ServerSnippet, s2.ServerSnippet)
-	// 	return false
-	// }
+	if s1.ServerSnippet != s2.ServerSnippet {
+		klog.Infof("Equal: ServerSnippet not match \n%v\n%v", s1.ServerSnippet, s2.ServerSnippet)
+		return false
+	}
 	if s1.SSLCiphers != s2.SSLCiphers {
 		klog.Infof("Equal: SSLCiphers not match \n%v\n%v", s1.SSLCiphers, s2.SSLCiphers)
 		return false
