@@ -171,6 +171,8 @@ type Endpoint struct {
 
 // Server describes a website
 type Server struct {
+	// Namespace
+	Namespace string `json:"namespace"`
 	// Hostname returns the FQDN of the server
 	Hostname string `json:"hostname"`
 	// SSLPassthrough indicates if the TLS termination is realized in

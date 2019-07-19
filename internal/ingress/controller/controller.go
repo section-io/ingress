@@ -609,7 +609,8 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 	})
 
 	sort.SliceStable(aServers, func(i, j int) bool {
-		return aServers[i].Hostname < aServers[j].Hostname
+		return aServers[i].Namespace < aServers[j].Namespace ||
+			(aServers[i].Namespace == aServers[j].Namespace && aServers[i].Hostname < aServers[j].Hostname)
 	})
 
 	return aUpstreams, aServers
@@ -978,7 +979,8 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			locationApplyAnnotations(loc, anns)
 
 			servers[host] = &ingress.Server{
-				Hostname: host,
+				Namespace: ing.Spec.Namespace,
+				Hostname:  host,
 				Locations: []*ingress.Location{
 					loc,
 				},
