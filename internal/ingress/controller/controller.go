@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mitchellh/hashstructure"
 	"k8s.io/klog"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -175,9 +174,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 	if !n.IsDynamicConfigurationEnough(pcfg) {
 		klog.Infof("syncIngress: Configuration changes detected, backend reload required.")
 
-		hash, _ := hashstructure.Hash(pcfg, &hashstructure.HashOptions{
-			TagName: "json",
-		})
+		hash := Hash(*pcfg)
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
