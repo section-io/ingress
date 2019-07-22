@@ -108,7 +108,7 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 }
 
 func logServers(servers []*ingress.Server, prefix string) {
-	for idx, svr := range servers {
+	for _, svr := range servers {
 		klog.Infof("%s: %s/%s w/alias:%s", prefix, svr.Namespace, svr.Hostname, svr.Alias)
 		for _, loc := range svr.Locations {
 			klog.Info("%s: location:%+v", prefix, loc)
