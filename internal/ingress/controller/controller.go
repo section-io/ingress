@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"sort"
@@ -108,12 +109,14 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 }
 
 func logServers(servers []*ingress.Server, prefix string) {
-	for _, svr := range servers {
-		klog.Infof("%s: %s/%s w/alias:%s", prefix, svr.Namespace, svr.Hostname, svr.Alias)
-		for _, loc := range svr.Locations {
-			klog.Infof("%s: location:%+v", prefix, loc)
-		}
-	}
+	b, _ := json.Marshal(servers)
+	klog.Infof("%s: %v", prefix, string(b))
+	// for _, svr := range servers {
+	// 	klog.Infof("%s: %s/%s w/alias:%s", prefix, svr.Namespace, svr.Hostname, svr.Alias)
+	// 	for _, loc := range svr.Locations {
+	// 		klog.Infof("%s: location:%+v", prefix, loc)
+	// 	}
+	// }
 }
 
 // syncIngress collects all the pieces required to assemble the NGINX
