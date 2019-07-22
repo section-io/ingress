@@ -124,6 +124,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
+	klog.Infof("syncIngress: servers:%+v", servers)
 
 	hosts := sets.NewString()
 
