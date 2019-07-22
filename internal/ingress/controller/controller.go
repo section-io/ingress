@@ -107,9 +107,12 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 	return s
 }
 
-func logServers(servers []*ingress.Server) {
+func logServers(servers []*ingress.Server, prefix string) {
 	for idx, svr := range servers {
-		klog.Infof("server %v: %+v", idx, svr)
+		klog.Infof("%s: %s/%s w/alias:%s", prefix, svr.Namespace, svr.Hostname, svr.Alias)
+		for _, loc := range svr.Locations {
+			klog.Info("%s: location:%+v", prefix, loc)
+		}
 	}
 }
 
@@ -130,7 +133,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
-	logServers(servers)
+	logServers(servers, "syncIngress")
 
 	hosts := sets.NewString()
 
