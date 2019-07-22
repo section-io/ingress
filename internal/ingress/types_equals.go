@@ -24,7 +24,7 @@ import (
 func logServers(servers []*Server, label string) {
 	klog.Infof("Equal.logServers: %s\n", label)
 	for idx, c1s := range servers {
-		klog.Infof("%v: %v, %v", idx, c1s.Hostname, c1s.Namespace)
+		klog.Infof("%v: %v", idx, c1s.Hostname)
 	}
 }
 
