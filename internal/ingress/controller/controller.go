@@ -42,6 +42,7 @@ import (
 
 const (
 	defUpstreamName = "upstream-default-backend"
+	defNamespace    = "_"
 	defServerName   = "_"
 	rootLocation    = "/"
 )
@@ -106,11 +107,23 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 	return s
 }
 
+func logServers(servers []*ingress.Server, prefix string) {
+	for idx, svr := range servers {
+		klog.Infof("%s: %s/%s w/alias:%s", prefix, svr.Namespace, svr.Hostname, svr.Alias)
+		for _, loc := range svr.Locations {
+			klog.Info("%s: location:%+v", prefix, loc)
+		}
+	}
+}
+
 // syncIngress collects all the pieces required to assemble the NGINX
 // configuration file and passes the resulting data structures to the backend
 // (OnUpdate) when a reload is deemed necessary.
-func (n *NGINXController) syncIngress(interface{}) error {
+func (n *NGINXController) syncIngress(why interface{}) error {
+	klog.Infof("syncIngress: why(%T): %v", why, why)
+	klog.Infof("Attempting to syncIngress, checking rate limiter")
 	n.syncRateLimiter.Accept()
+	klog.Infof("executing syncIngress")
 
 	if n.syncQueue.IsShuttingDown() {
 		return nil
@@ -120,9 +133,11 @@ func (n *NGINXController) syncIngress(interface{}) error {
 
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
+	logServers(servers, "syncIngress")
 
 	hosts := sets.NewString()
 
+	klog.Infof("syncIngress: have %v servers", len(servers))
 	for _, server := range servers {
 		if !hosts.Has(server.Hostname) {
 			hosts.Insert(server.Hostname)
@@ -135,6 +150,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 			continue
 		}
 
+		klog.Infof("syncIngress: have %v server.Locations", len(server.Locations))
 		for _, loc := range server.Locations {
 			if loc.Path != rootLocation {
 				klog.Warningf("Ignoring SSL Passthrough for location %q in server %q", loc.Path, server.Hostname)
@@ -160,30 +176,36 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		ControllerPodsCount:   n.store.GetRunningControllerPodsCount(),
 	}
 
+	klog.Infof("syncIngress: comparing config the first time")
 	if n.runningConfig.Equal(pcfg) {
 		klog.V(3).Infof("No configuration change detected, skipping backend reload.")
 		return nil
 	}
-
+	klog.Infof("syncIngress: Checking IsDynamicConfigurationEnough")
 	if !n.IsDynamicConfigurationEnough(pcfg) {
-		klog.Infof("Configuration changes detected, backend reload required.")
+		klog.Infof("syncIngress: Configuration changes detected, backend reload required.")
+
 
 		// It appears this hash isn't needed to trigger reloads, and exists largely for logging purposes
 		hash := HashConfig(*pcfg)
 
+
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
+		klog.Infof("syncIngress: Hash: %v", hash)
+		klog.Infof("syncIngress: calling OnUpdate")
 		err := n.OnUpdate(*pcfg)
 		if err != nil {
 			n.metricCollector.IncReloadErrorCount()
 			n.metricCollector.ConfigSuccess(hash, false)
-			klog.Errorf("Unexpected failure reloading the backend:\n%v", err)
+			klog.Errorf("syncIngress: Unexpected failure reloading the backend:\n%v", err)
 			return err
 		}
 
+		klog.Infof("syncIngress: calling SetHosts")
 		n.metricCollector.SetHosts(hosts)
 
-		klog.Infof("Backend successfully reloaded.")
+		klog.Infof("syncIngress: Backend successfully reloaded.")
 		n.metricCollector.ConfigSuccess(hash, true)
 		n.metricCollector.IncReloadCount()
 
@@ -193,11 +215,12 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		}
 	}
 
+	klog.Infof("syncIngress: comparing config the second time")
 	isFirstSync := n.runningConfig.Equal(&ingress.Configuration{})
 	if isFirstSync {
 		// For the initial sync it always takes some time for NGINX to start listening
 		// For large configurations it might take a while so we loop and back off
-		klog.Info("Initial sync, sleeping for 1 second.")
+		klog.Info("syncIngress: Initial sync, sleeping for 1 second.")
 		time.Sleep(1 * time.Second)
 	}
 
@@ -208,27 +231,32 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		Jitter:   0.1,
 	}
 
+	klog.Infof("syncIngress: calling ExponentialBackoff")
 	err := wait.ExponentialBackoff(retry, func() (bool, error) {
+		klog.Infof("syncIngress: calling configureDynamically")
 		err := configureDynamically(pcfg, n.cfg.DynamicCertificatesEnabled)
 		if err == nil {
-			klog.V(2).Infof("Dynamic reconfiguration succeeded.")
+			klog.Infof("syncIngress: Dynamic reconfiguration succeeded.")
 			return true, nil
 		}
 
-		klog.Warningf("Dynamic reconfiguration failed: %v", err)
+		klog.Warningf("syncIngress: Dynamic reconfiguration failed: %v", err)
 		return false, err
 	})
 	if err != nil {
-		klog.Errorf("Unexpected failure reconfiguring NGINX:\n%v", err)
+		klog.Errorf("syncIngress: Unexpected failure reconfiguring NGINX:\n%v", err)
 		return err
 	}
 
+	klog.Infof("syncIngress: calling getRemovedIngresses")
 	ri := getRemovedIngresses(n.runningConfig, pcfg)
+	klog.Infof("syncIngress: calling getRemovedHosts")
 	re := getRemovedHosts(n.runningConfig, pcfg)
+	klog.Infof("syncIngress: calling RemoveMetrics")
 	n.metricCollector.RemoveMetrics(ri, re)
 
 	n.runningConfig = pcfg
-
+	klog.Infof("syncIngress finished running, no errors")
 	return nil
 }
 
@@ -397,9 +425,9 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 				host = defServerName
 			}
 
-			server := servers[host]
+			server := servers[ing.ObjectMeta.Namespace+"/"+host]
 			if server == nil {
-				server = servers[defServerName]
+				server = servers[defNamespace+"/"+defServerName]
 			}
 
 			if rule.HTTP == nil &&
@@ -595,7 +623,8 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 	})
 
 	sort.SliceStable(aServers, func(i, j int) bool {
-		return aServers[i].Hostname < aServers[j].Hostname
+		return aServers[i].Namespace < aServers[j].Namespace ||
+			(aServers[i].Namespace == aServers[j].Namespace && aServers[i].Hostname < aServers[j].Hostname)
 	})
 
 	return aUpstreams, aServers
@@ -884,9 +913,10 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 	}
 
 	// initialize default server and root location
-	servers[defServerName] = &ingress.Server{
-		Hostname: defServerName,
-		SSLCert:  *defaultCertificate,
+	servers[defNamespace+"/"+defServerName] = &ingress.Server{
+		Namespace: defNamespace,
+		Hostname:  defServerName,
+		SSLCert:   *defaultCertificate,
 		Locations: []*ingress.Location{
 			{
 				Path:         rootLocation,
@@ -922,7 +952,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 				un = backendUpstream.Name
 
 				// special "catch all" case, Ingress with a backend but no rule
-				defLoc := servers[defServerName].Locations[0]
+				defLoc := servers[defNamespace+"/"+defServerName].Locations[0]
 				if defLoc.IsDefBackend && len(ing.Spec.Rules) == 0 {
 					klog.V(2).Infof("Ingress %q defines a backend but no rule. Using it to configure the catch-all server %q",
 						ingKey, defServerName)
@@ -950,7 +980,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			if host == "" {
 				host = defServerName
 			}
-			if _, ok := servers[host]; ok {
+			if _, ok := servers[ing.ObjectMeta.Namespace+"/"+host]; ok {
 				// server already configured
 				continue
 			}
@@ -963,8 +993,9 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			}
 			locationApplyAnnotations(loc, anns)
 
-			servers[host] = &ingress.Server{
-				Hostname: host,
+			servers[ing.ObjectMeta.Namespace+"/"+host] = &ingress.Server{
+				Namespace: ing.ObjectMeta.Namespace,
+				Hostname:  host,
 				Locations: []*ingress.Location{
 					loc,
 				},
@@ -991,10 +1022,10 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			}
 
 			if anns.Alias != "" {
-				if servers[host].Alias == "" {
-					servers[host].Alias = anns.Alias
+				if servers[ing.ObjectMeta.Namespace+"/"+host].Alias == "" {
+					servers[ing.ObjectMeta.Namespace+"/"+host].Alias = anns.Alias
 					if _, ok := aliases["Alias"]; !ok {
-						aliases["Alias"] = host
+						aliases["Alias"] = ing.ObjectMeta.Namespace + "/" + host
 					}
 				} else {
 					klog.Warningf("Aliases already configured for server %q, skipping (Ingress %q)",
@@ -1003,8 +1034,8 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			}
 
 			if anns.ServerSnippet != "" {
-				if servers[host].ServerSnippet == "" {
-					servers[host].ServerSnippet = anns.ServerSnippet
+				if servers[ing.ObjectMeta.Namespace+"/"+host].ServerSnippet == "" {
+					servers[ing.ObjectMeta.Namespace+"/"+host].ServerSnippet = anns.ServerSnippet
 				} else {
 					klog.Warningf("Server snippet already configured for server %q, skipping (Ingress %q)",
 						host, ingKey)
@@ -1012,12 +1043,12 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			}
 
 			// only add SSL ciphers if the server does not have them previously configured
-			if servers[host].SSLCiphers == "" && anns.SSLCiphers != "" {
-				servers[host].SSLCiphers = anns.SSLCiphers
+			if servers[ing.ObjectMeta.Namespace+"/"+host].SSLCiphers == "" && anns.SSLCiphers != "" {
+				servers[ing.ObjectMeta.Namespace+"/"+host].SSLCiphers = anns.SSLCiphers
 			}
 
 			// only add a certificate if the server does not have one previously configured
-			if servers[host].SSLCert.PemFileName != "" {
+			if servers[ing.ObjectMeta.Namespace+"/"+host].SSLCert.PemFileName != "" {
 				continue
 			}
 
@@ -1030,7 +1061,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 
 			if tlsSecretName == "" {
 				klog.V(3).Infof("Host %q is listed in the TLS section but secretName is empty. Using default certificate.", host)
-				servers[host].SSLCert = *defaultCertificate
+				servers[ing.ObjectMeta.Namespace+"/"+host].SSLCert = *defaultCertificate
 				continue
 			}
 
@@ -1038,7 +1069,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			cert, err := n.store.GetLocalSSLCert(secrKey)
 			if err != nil {
 				klog.Warningf("Error getting SSL certificate %q: %v. Using default certificate", secrKey, err)
-				servers[host].SSLCert = *defaultCertificate
+				servers[ing.ObjectMeta.Namespace+"/"+host].SSLCert = *defaultCertificate
 				continue
 			}
 
@@ -1053,7 +1084,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 					klog.Warningf("SSL certificate %q does not contain a Common Name or Subject Alternative Name for server %q: %v",
 						secrKey, host, err)
 					klog.Warningf("Using default certificate")
-					servers[host].SSLCert = *defaultCertificate
+					servers[ing.ObjectMeta.Namespace+"/"+host].SSLCert = *defaultCertificate
 					continue
 				}
 			}
@@ -1062,7 +1093,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 				n.overridePemFileNameAndPemSHA(cert)
 			}
 
-			servers[host].SSLCert = *cert
+			servers[ing.ObjectMeta.Namespace+"/"+host].SSLCert = *cert
 
 			if cert.ExpireTime.Before(time.Now().Add(240 * time.Hour)) {
 				klog.Warningf("SSL certificate for server %q is about to expire (%v)", host, cert.ExpireTime)
@@ -1160,7 +1191,7 @@ func mergeAlternativeBackends(ing *ingress.Ingress, upstreams map[string]*ingres
 
 			merged := false
 
-			for _, loc := range servers[defServerName].Locations {
+			for _, loc := range servers[defNamespace+"/"+defServerName].Locations {
 				priUps := upstreams[loc.Backend]
 
 				if canMergeBackend(priUps, altUps) {
@@ -1191,7 +1222,7 @@ func mergeAlternativeBackends(ing *ingress.Ingress, upstreams map[string]*ingres
 
 			merged := false
 
-			server, ok := servers[rule.Host]
+			server, ok := servers[ing.ObjectMeta.Namespace+"/"+rule.Host]
 			if !ok {
 				klog.Errorf("cannot merge alternative backend %s into hostname %s that does not exist",
 					altUps.Name,
