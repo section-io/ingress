@@ -263,7 +263,11 @@ func writeLocation(l ingress.Location, hash io.Writer) {
 
 	writeAuthTLSConfig(l.BasicDigestAuth, hash)
 
-	writeString(*l.Denied, hash)
+	denied := ""
+	if l.Denied != nil {
+		denied = *l.Denied
+	}
+	writeString(denied, hash)
 
 	writeCorsConfig(l.CorsConfig, hash)
 
