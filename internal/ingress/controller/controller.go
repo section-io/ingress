@@ -133,7 +133,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
-	// logServers(servers, "syncIngress")
+	logServers(servers, "syncIngress")
 
 	hosts := sets.NewString()
 
