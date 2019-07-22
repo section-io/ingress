@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/log"
 	"sort"
