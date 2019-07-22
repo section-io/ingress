@@ -111,7 +111,7 @@ func logServers(servers []*ingress.Server, prefix string) {
 	for _, svr := range servers {
 		klog.Infof("%s: %s/%s w/alias:%s", prefix, svr.Namespace, svr.Hostname, svr.Alias)
 		for _, loc := range svr.Locations {
-			klog.Info("%s: location:%+v", prefix, loc)
+			klog.Infof("%s: location:%+v", prefix, loc)
 		}
 	}
 }
@@ -133,7 +133,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
-	logServers(servers, "syncIngress")
+	// logServers(servers, "syncIngress")
 
 	hosts := sets.NewString()
 
@@ -185,10 +185,8 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 	if !n.IsDynamicConfigurationEnough(pcfg) {
 		klog.Infof("syncIngress: Configuration changes detected, backend reload required.")
 
-
 		// It appears this hash isn't needed to trigger reloads, and exists largely for logging purposes
 		hash := HashConfig(*pcfg)
-
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
