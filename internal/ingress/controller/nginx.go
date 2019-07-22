@@ -781,10 +781,10 @@ func clearCertificates(config *ingress.Configuration) {
 	for _, server := range config.Servers {
 		copyOfServer := *server
 		copyOfServer.SSLCert = ingress.SSLCert{PemFileName: copyOfServer.SSLCert.PemFileName}
-		klog.Infof("clearCertificates: appending: %+v\n", copyOfServer.SSLCert)
+		// klog.Infof("clearCertificates: appending: %+v\n", copyOfServer.SSLCert)
 		clearedServers = append(clearedServers, &copyOfServer)
 	}
-	klog.Infof("clearCertificates: clearedServers: \n%+v\n", clearedServers)
+	// klog.Infof("clearCertificates: clearedServers: \n%+v\n", clearedServers)
 
 	config.Servers = clearedServers
 }
