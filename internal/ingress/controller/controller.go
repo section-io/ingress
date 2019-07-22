@@ -107,7 +107,7 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 	return s
 }
 
-func logServers(servers []*Server) {
+func logServers(servers []*ingress.Server) {
 	for idx, svr := range servers {
 		klog.Infof("server %v: %+v", idx, svr)
 	}
