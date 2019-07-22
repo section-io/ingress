@@ -61,8 +61,8 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	for idx, c1s := range c1.Servers {
 		if !c1s.Equal(c2.Servers[idx]) {
 			klog.Infof("Equal: servers not sorted same")
-			logServers(c1.Servers, "c1")
-			logServers(c2.Servers, "c2")
+			// logServers(c1.Servers, "c1")
+			// logServers(c2.Servers, "c2")
 			klog.Infof("servers:\ncls: %+v\nc2:%+v", c1.Servers[idx], c2.Servers[idx])
 			return false
 		}
