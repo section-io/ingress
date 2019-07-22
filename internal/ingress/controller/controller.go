@@ -1012,7 +1012,7 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 				if servers[ing.ObjectMeta.Namespace+"/"+host].Alias == "" {
 					servers[ing.ObjectMeta.Namespace+"/"+host].Alias = anns.Alias
 					if _, ok := aliases["Alias"]; !ok {
-						aliases["Alias"] = host
+						aliases["Alias"] = ing.ObjectMeta.Namespace + "/" + host
 					}
 				} else {
 					klog.Warningf("Aliases already configured for server %q, skipping (Ingress %q)",
@@ -1089,9 +1089,9 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 	}
 
 	for alias, host := range aliases {
-		if _, ok := servers[ing.ObjectMeta.Namespace+"/"+alias]; ok {
+		if _, ok := servers[alias]; ok {
 			klog.Warningf("Conflicting hostname (%v) and alias (%v). Removing alias to avoid conflicts.", host, alias)
-			servers[ing.ObjectMeta.Namespace+"/"+host].Alias = ""
+			servers[host].Alias = ""
 		}
 	}
 
