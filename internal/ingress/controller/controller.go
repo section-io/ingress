@@ -970,7 +970,15 @@ func (n *NGINXController) createServers(data []*ingress.Ingress,
 			}
 			if _, ok := servers[host]; ok {
 				// server already configured
-				klog.Infof("createServers: server for host '%s' already exists: %+v, rule: %+v", host, servers[host], rule)
+				klog.Infof("createServers: server for host '%s' already exists", host)
+				for i, location := range servers[host].Locations {
+					klog.Infof("createServers:   location[%d]: Path: %s backend:%v %v", i, location.Path, location.Backend, location.Port)
+				}
+				if rule.HTTP != nil {
+					for i, path := range rule.HTTP.Paths {
+						klog.Infof("createServers:   ingressPath[%d]: %s", i, path)
+					}
+				}
 				continue
 			}
 
