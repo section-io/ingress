@@ -107,6 +107,12 @@ func (n NGINXController) GetPublishService() *apiv1.Service {
 	return s
 }
 
+func logServers(servers []*Server) {
+	for idx, svr := range servers {
+		klog.Infof("server %v: %+v", idx, svr)
+	}
+}
+
 // syncIngress collects all the pieces required to assemble the NGINX
 // configuration file and passes the resulting data structures to the backend
 // (OnUpdate) when a reload is deemed necessary.
@@ -124,7 +130,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
-	klog.Infof("syncIngress: servers:%+v", servers)
+	logServers(servers)
 
 	hosts := sets.NewString()
 
