@@ -596,22 +596,26 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 
 	aServers := make([]*ingress.Server, 0, len(servers))
 	for _, value := range servers {
+		// sort.SliceStable(value.Locations, func(i, j int) bool {
+		// 	return value.Locations[i].Path > value.Locations[j].Path
+		// })
+
+		// sort.SliceStable(value.Locations, func(i, j int) bool {
+		// 	return len(value.Locations[i].Path) > len(value.Locations[j].Path)
+		// })
+
+		// byPath := sort.SliceIsSorted(value.Locations, func(i, j int) bool {
+		// 	return value.Locations[i].Path > value.Locations[j].Path
+		// })
+		// klog.Infof("sort: was sorted by Path? %v", byPath)
+
+		// // matt and gary addition
+		// sort.SliceStable(value.Locations, func(i, j int) bool {
+		// 	return value.Locations[i].Backend > value.Locations[j].Backend
+		// })
+
 		sort.SliceStable(value.Locations, func(i, j int) bool {
 			return value.Locations[i].Path > value.Locations[j].Path
-		})
-
-		sort.SliceStable(value.Locations, func(i, j int) bool {
-			return len(value.Locations[i].Path) > len(value.Locations[j].Path)
-		})
-
-		byPath := sort.SliceIsSorted(value.Locations, func(i, j int) bool {
-			return value.Locations[i].Path > value.Locations[j].Path
-		})
-		klog.Infof("sort: was sorted by Path? %v", byPath)
-
-		// matt and gary addition
-		sort.SliceStable(value.Locations, func(i, j int) bool {
-			return value.Locations[i].Backend > value.Locations[j].Backend
 		})
 		aServers = append(aServers, value)
 	}

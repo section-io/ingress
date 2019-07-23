@@ -28,6 +28,13 @@ func logServers(servers []*Server, label string) {
 	}
 }
 
+func logLocations(servers []*Location, label string) {
+	klog.Infof("Equal.logServers: %s\n", label)
+	for idx, c1s := range servers {
+		klog.Infof("%v: %v", idx, c1s.Path)
+	}
+}
+
 func logBackends(backends []*Backend, label string) {
 	for idx, b := range backends {
 		klog.Infof("Equal: %s backend %v: %+v", label, idx, b.Name)
@@ -347,7 +354,9 @@ func (s1 *Server) Equal(s2 *Server) bool {
 	// Location are sorted
 	for idx, s1l := range s1.Locations {
 		if !s1l.Equal(s2.Locations[idx]) {
-			klog.Infof("Equal:Server Locations are not sorted the same  \n%v\n%v", s1l, s2.Locations[idx])
+			klog.Info("Equal:Server Locations are not sorted the same")
+			logLocations(s1.Locations, "L1")
+			logLocations(s2.Locations, "L2")
 			klog.Infof("Equal:Server had %v locations", len(s1.Locations))
 			return false
 		}
