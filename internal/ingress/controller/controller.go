@@ -604,6 +604,11 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 			return len(value.Locations[i].Path) > len(value.Locations[j].Path)
 		})
 
+		byPath := sort.SliceIsSorted(value.Locations, func(i, j int) bool {
+			return value.Locations[i].Path > value.Locations[j].Path
+		})
+		klog.Infof("sort: was sorted by Path? %v", byPath)
+
 		// matt and gary addition
 		sort.SliceStable(value.Locations, func(i, j int) bool {
 			return value.Locations[i].Backend > value.Locations[j].Backend
@@ -616,6 +621,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 	})
 
 	sort.SliceStable(aServers, func(i, j int) bool {
+		//mattw add
 		if(aServers[i].Hostname == aServers[j].Hostname) {
 			klog.Infof("sort:found matching hostnames, using namespace %v  %v", aServers[i].SSLCert.GetNamespace(), aServers[j].SSLCert.GetNamespace())
 			return aServers[i].SSLCert.GetNamespace() < aServers[j].SSLCert.GetNamespace()

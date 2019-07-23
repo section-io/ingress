@@ -348,6 +348,7 @@ func (s1 *Server) Equal(s2 *Server) bool {
 	for idx, s1l := range s1.Locations {
 		if !s1l.Equal(s2.Locations[idx]) {
 			klog.Infof("Equal:Server Locations are not sorted the same  \n%v\n%v", s1l, s2.Locations[idx])
+			klog.Infof("Equal:Server had %v locations", len(s1.Locations))
 			return false
 		}
 	}

@@ -335,7 +335,7 @@ func writeLocation(l ingress.Location, hash io.Writer) {
 	writeString(l.ModSecurity.Snippet, hash)
 	writeBool(l.ModSecurity.Enable, hash)
 	writeBool(l.ModSecurity.OWASPRules, hash)
-
+	
 	writeString(l.Satisfy, hash)
 
 	writeString(l.DefaultBackendUpstreamName, hash)
