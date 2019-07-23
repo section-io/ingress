@@ -162,7 +162,7 @@ func (b1 *Backend) Equal(b2 *Backend) bool {
 
 	match := compareEndpoints(b1.Endpoints, b2.Endpoints)
 	if !match {
-		klog.Infof("Equal Backend: endpoints did not match. b1.Name:%v  b2.Name:%v", b1.Name, b2.Name)
+		klog.Infof("Equal Backend: endpoints did not match. b1.Name:%v  b2.Name:%v", b1.Endpoints, b2.Endpoints)
 		return false
 	}
 
