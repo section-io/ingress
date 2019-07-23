@@ -617,6 +617,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 
 	sort.SliceStable(aServers, func(i, j int) bool {
 		if(aServers[i].Hostname == aServers[j].Hostname) {
+			klog.Infof("sort:found matching hostnames, using namespace %v  %v", aServers[i].SSLCert.GetNamespace(), aServers[j].SSLCert.GetNamespace())
 			return aServers[i].SSLCert.GetNamespace() < aServers[j].SSLCert.GetNamespace()
 		}
 		return aServers[i].Hostname < aServers[j].Hostname
