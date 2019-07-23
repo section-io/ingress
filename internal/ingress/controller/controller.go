@@ -623,8 +623,8 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 			strings.HasSuffix(svr.Hostname, "codeassassin.com") ||
 			strings.HasSuffix(svr.Hostname, "stangroome.com") {
 			for j, loc := range svr.Locations {
-				klog.Infof("getBackendServers: host[%d]: %s loc[%d]: Path: %s backend:%v:%v serversnippet:%v",
-					i, svr.Hostname, j, loc.Path, loc.Backend, loc.Port, svr.ServerSnippet)
+				klog.Infof("getBackendServers: host[%d]: %s loc[%d]: Path: %s backend:%v:%v serversnippet:%v configurationsnippet:%v",
+					i, svr.Hostname, j, loc.Path, loc.Backend, loc.Port, svr.ServerSnippet, loc.ConfigurationSnippet)
 			}
 		}
 	}

@@ -47,8 +47,8 @@ func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	match := compareBackends(c1.Backends, c2.Backends)
 	if !match {
 		klog.Infof("Equal: backends were not equal \n%v\n%v", c1.Backends, c2.Backends)
-		logBackends(c1.Backends, "back1")
-		logBackends(c2.Backends, "back2")
+		// logBackends(c1.Backends, "back1")
+		// logBackends(c2.Backends, "back2")
 		return false
 	}
 
