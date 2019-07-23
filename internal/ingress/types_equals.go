@@ -31,7 +31,7 @@ func logServers(servers []*Server, label string) {
 func logLocations(servers []*Location, label string) {
 	klog.Infof("Equal.logServers: %s\n", label)
 	for idx, c1s := range servers {
-		klog.Infof("%v: %v  %v", idx, c1s.Path, c1s.Backend)
+		klog.Infof("%v: %v  %v  %v", idx, c1s.Path, c1s.Backend, c1s.ConfigurationSnippet)
 	}
 }
 
