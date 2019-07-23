@@ -604,6 +604,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 			return len(value.Locations[i].Path) > len(value.Locations[j].Path)
 		})
 
+		// matt and gary addition
 		sort.SliceStable(value.Locations, func(i, j int) bool {
 			return value.Locations[i].Backend > value.Locations[j].Backend
 		})
@@ -615,6 +616,9 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 	})
 
 	sort.SliceStable(aServers, func(i, j int) bool {
+		if(aServers[i].Hostname == aServers[j].Hostname) {
+			return aServers[i].SSLCert.GetNamespace() < aServers[j].SSLCert.GetNamespace()
+		}
 		return aServers[i].Hostname < aServers[j].Hostname
 	})
 
