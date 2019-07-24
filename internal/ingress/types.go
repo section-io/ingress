@@ -314,6 +314,10 @@ type Location struct {
 	Satisfy string `json:"satisfy"`
 }
 
+func (l *Location) HashInclude(field string, v interface{}) (bool, error) {
+	return field != "Ingress", nil
+}
+
 // SSLPassthroughBackend describes a SSL upstream server configured
 // as passthrough (no TLS termination in the ingress controller)
 // The endpoints must provide the TLS termination exposing the required SSL certificate.
