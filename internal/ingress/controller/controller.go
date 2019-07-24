@@ -126,7 +126,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 	// sort.SliceStable(ingresses, func(i, j int) bool {
 	// 	return ingresses[i].Namespace < ingresses[j].Namespace
 	// })
-	
+
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
 
@@ -183,9 +183,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		// It appears this hash isn't needed to trigger reloads, and exists largely for logging purposes
 		// hash := HashConfig(*pcfg)
 
-		hash, _ := hashstructure.Hash(pcfg, &hashstructure.HashOptions{
-			TagName: "json",
-		})
+		hash, _ := hashstructure.Hash(pcfg, nil)
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 

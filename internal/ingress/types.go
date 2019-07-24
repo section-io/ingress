@@ -221,7 +221,7 @@ type Location struct {
 	// uses the default backend.
 	IsDefBackend bool `json:"isDefBackend"`
 	// Ingress returns the ingress from which this location was generated
-	Ingress *Ingress `json:"ignore"`
+	Ingress *Ingress `json:"ignore" hash:"ignore"`
 	// Backend describes the name of the backend to use.
 	Backend string `json:"backend"`
 	// Service describes the referenced services from the ingress
