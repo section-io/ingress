@@ -17,6 +17,7 @@ limitations under the License.
 package store
 
 import (
+	"strings"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -778,6 +779,15 @@ func (s *k8sStore) ListIngresses() []*ingress.Ingress {
 		jr := ingresses[j].CreationTimestamp
 		return ir.Before(&jr)
 	})
+
+	//mattw addition
+	for _, ing := range ingresses {
+		if strings.HasPrefix(ing.Namespace, "section-env2185") ||
+			strings.HasPrefix(ing.Namespace, "section-env805") {
+				klog.Infof("ListIngresses: %v  %v", ing.Namespace, ing.CreationTimestamp)
+		}
+	}
+
 
 	return ingresses
 }
