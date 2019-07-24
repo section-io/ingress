@@ -777,6 +777,9 @@ func (s *k8sStore) ListIngresses() []*ingress.Ingress {
 	sort.SliceStable(ingresses, func(i, j int) bool {
 		ir := ingresses[i].CreationTimestamp
 		jr := ingresses[j].CreationTimestamp
+		if ir == jr {
+			return ingresses[i].Namespace < ingresses[j].Namespace
+		}
 		return ir.Before(&jr)
 	})
 
