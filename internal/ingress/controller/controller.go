@@ -122,7 +122,11 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 	}
 
 	ings := n.store.ListIngresses()
-
+	// //mattw addition
+	// sort.SliceStable(ingresses, func(i, j int) bool {
+	// 	return ingresses[i].Namespace < ingresses[j].Namespace
+	// })
+	
 	upstreams, servers := n.getBackendServers(ings)
 	var passUpstreams []*ingress.SSLPassthroughBackend
 
@@ -402,11 +406,6 @@ func (n *NGINXController) getDefaultUpstream() *ingress.Backend {
 // backend.  An upstream can be used in multiple servers if the namespace,
 // service name and port are the same.
 func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*ingress.Backend, []*ingress.Server) {
-	//mattw addition
-	sort.SliceStable(ingresses, func(i, j int) bool {
-		return ingresses[i].Namespace < ingresses[j].Namespace
-	})
-
 	du := n.getDefaultUpstream()
 	upstreams := n.createUpstreams(ingresses, du)
 	servers := n.createServers(ingresses, upstreams, du)
