@@ -179,7 +179,7 @@ func (n *NGINXController) syncIngress(why interface{}) error {
 		// It appears this hash isn't needed to trigger reloads, and exists largely for logging purposes
 		// hash := HashConfig(*pcfg)
 
-		hash, err := hashstructure.Hash(pcfg, &hashstructure.HashOptions{
+		hash, _ := hashstructure.Hash(pcfg, &hashstructure.HashOptions{
 			TagName: "json",
 		})
 
