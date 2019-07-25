@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 
+	"github.com/mitchellh/hashstructure"
 	"k8s.io/ingress-nginx/internal/ingress"
 	"k8s.io/ingress-nginx/internal/ingress/annotations"
 	"k8s.io/ingress-nginx/internal/ingress/annotations/proxy"
@@ -169,7 +170,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		klog.Infof("Configuration changes detected, backend reload required.")
 
 		// It appears this hash isn't needed to trigger reloads, and exists largely for logging purposes
-		hash := HashConfig(*pcfg)
+		hash, _ := hashstructure.Hash(pcfg, nil)
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
