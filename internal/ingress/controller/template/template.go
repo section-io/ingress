@@ -510,7 +510,7 @@ func buildProxyPass(host string, b interface{}, loc interface{}) string {
 
 		return fmt.Sprintf(`
 rewrite "(?i)%s" %s break;
-%v%v %s%s;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
+%v%v %s%s$uri;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
 	}
 
 	// default proxy_pass
