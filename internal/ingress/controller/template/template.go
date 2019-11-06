@@ -512,7 +512,7 @@ func buildProxyPass(host string, b interface{}, loc interface{}) string {
 rewrite ^ $request_uri;
 rewrite "(?i)%s" %s break;
 return 400;
-%v%v %s%s$uri;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
+%v%v %s%s$request_uri;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
 	}
 
 	// default proxy_pass
