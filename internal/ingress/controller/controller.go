@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mitchellh/hashstructure"
 	"k8s.io/klog"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -169,9 +168,8 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	if !n.IsDynamicConfigurationEnough(pcfg) {
 		klog.Infof("Configuration changes detected, backend reload required.")
 
-		hash, _ := hashstructure.Hash(pcfg, &hashstructure.HashOptions{
-			TagName: "json",
-		})
+		// It appears this hash isn't needed to trigger reloads, and exists largely for logging purposes
+		hash := HashConfig(*pcfg)
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 

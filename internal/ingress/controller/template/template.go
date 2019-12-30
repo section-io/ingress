@@ -121,6 +121,7 @@ var (
 			}
 			return true
 		},
+		"reduceByAlias":              reduceByAlias,
 		"escapeLiteralDollar":        escapeLiteralDollar,
 		"shouldConfigureLuaRestyWAF": shouldConfigureLuaRestyWAF,
 		"buildLuaSharedDictionaries": buildLuaSharedDictionaries,
@@ -211,8 +212,8 @@ func buildLuaSharedDictionaries(s interface{}, disableLuaRestyWAF bool) string {
 	}
 
 	out := []string{
-		"lua_shared_dict configuration_data 5M",
-		"lua_shared_dict certificate_data 16M",
+		"lua_shared_dict configuration_data 50M",
+		"lua_shared_dict certificate_data 50M",
 	}
 
 	if !disableLuaRestyWAF {
@@ -508,8 +509,10 @@ func buildProxyPass(host string, b interface{}, loc interface{}) string {
 		}
 
 		return fmt.Sprintf(`
+rewrite ^ $request_uri;
 rewrite "(?i)%s" %s break;
-%v%v %s%s;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
+return 400;
+%v%v %s%s$request_uri;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
 	}
 
 	// default proxy_pass
