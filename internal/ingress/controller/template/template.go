@@ -133,6 +133,7 @@ var (
 			}
 			return true
 		},
+		"reduceByAlias":			  reduceByAlias,
 		"escapeLiteralDollar":        escapeLiteralDollar,
 		"shouldConfigureLuaRestyWAF": shouldConfigureLuaRestyWAF,
 		"buildLuaSharedDictionaries": buildLuaSharedDictionaries,
@@ -250,14 +251,14 @@ func buildLuaSharedDictionaries(c interface{}, s interface{}, disableLuaRestyWAF
 	// check if config contains lua "lua_configuration_data" value otherwise, use default
 	cfgData, ok := cfg.LuaSharedDicts["configuration_data"]
 	if !ok {
-		cfgData = 15
+		cfgData = 50
 	}
 	out = append(out, fmt.Sprintf("lua_shared_dict configuration_data %dM", cfgData))
 
 	// check if config contains "lua_certificate_data" value otherwise, use default
 	certData, ok := cfg.LuaSharedDicts["certificate_data"]
 	if !ok {
-		certData = 16
+		certData = 50
 	}
 	out = append(out, fmt.Sprintf("lua_shared_dict certificate_data %dM", certData))
 	if !disableLuaRestyWAF {
@@ -534,8 +535,10 @@ func buildProxyPass(host string, b interface{}, loc interface{}) string {
 		}
 
 		return fmt.Sprintf(`
+rewrite ^ $request_uri;
 rewrite "(?i)%s" %s break;
-%v%v %s%s;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
+return 400;
+%v%v %s%s$request_uri;`, path, location.Rewrite.Target, xForwardedPrefix, proxyPass, proto, upstreamName)
 	}
 
 	// default proxy_pass

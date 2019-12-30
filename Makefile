@@ -16,7 +16,8 @@
 all: all-container
 
 # Use the 0.0 tag for testing, it shouldn't clobber any release builds
-TAG ?= 0.25.1
+TAG ?= 0.25.1-k${SECTION_VERSION}
+VOLUME ?= ${VOLUME_ID}
 REGISTRY ?= quay.io/kubernetes-ingress-controller
 DOCKER ?= docker
 SED_I ?= sed -i
@@ -48,7 +49,7 @@ GOARCH = ${ARCH}
 
 GOBUILD_FLAGS := -v
 
-ALL_ARCH = amd64 arm arm64
+ALL_ARCH = amd64 #arm arm64
 
 QEMUVERSION = v4.0.0
 
@@ -71,6 +72,8 @@ export IMAGE
 export E2E_NODES
 export E2E_CHECK_LEAKS
 export SLOW_E2E_THRESHOLD
+export VOLUME
+export SECTION_VERSION
 
 # Set default base image dynamically for each arch
 BASEIMAGE?=quay.io/kubernetes-ingress-controller/nginx-$(ARCH):0.91
