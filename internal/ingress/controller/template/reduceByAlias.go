@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"k8s.io/ingress-nginx/internal/ingress"
 )
@@ -41,9 +42,29 @@ func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
 		}
 	}
 
+	fmtDomainName := func(name string) string {
+		// If 'name' is a wildcard name, need to convert to a regex.
+		// NOTE: we're only handling 1 level of wildcards system-wide at this time.
+		if !strings.HasPrefix(name, "*.") {
+			return name
+		}
+		regexName := "\"~^([a-z0-9\\-]{1,63})" + strings.ReplaceAll(name[1:], ".", "\\.") + "$\""
+		return regexName
+	}
+
 	srv := make([]*ingress.Server, 0)
 	for _, server := range rs {
 		val := server
+		if strings.HasPrefix(val.Hostname, "*.") || strings.Index(val.Alias, "*") > -1 {
+			// Make a copy of server and convert wildcard names to regex.
+			// Don't need a deep copy as we may only change Server and Alias
+			val.Hostname = fmtDomainName(val.Hostname)
+			aliases := strings.Split(val.Alias, " ")
+			for i, alias := range aliases {
+				aliases[i] = fmtDomainName(alias)
+			}
+			val.Alias = strings.Join(aliases, " ")
+		}
 		srv = append(srv, &val)
 	}
 
