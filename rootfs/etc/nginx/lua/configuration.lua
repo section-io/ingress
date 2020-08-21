@@ -3,6 +3,7 @@ local cjson = require("cjson.safe")
 -- this is the Lua representation of Configuration struct in internal/ingress/types.go
 local configuration_data = ngx.shared.configuration_data
 local certificate_data = ngx.shared.certificate_data
+local metrics_data = ngx.shared.metrics_data
 
 local _M = {}
 
@@ -55,14 +56,20 @@ local function handle_servers()
   end
 
   local err_buf = {}
+  local cert_count_success, cert_count_fail, cert_count_forcible = 0, 0, 0
   for _, server in ipairs(servers) do
     if server.hostname and server.sslCert.pemCertKey then
       local success, set_err, forcible = certificate_data:set(server.hostname, server.sslCert.pemCertKey)
       if not success then
         local err_msg = string.format("error setting certificate for %s: %s\n", server.hostname, tostring(set_err))
         table.insert(err_buf, err_msg)
+        cert_count_fail = cert_count_fail + 1
+      else
+        cert_count_success = cert_count_success + 1
       end
       if forcible then
+        cert_count_forcible = cert_count_forcible + 1
+        metrics_data:incr("cert_overflow_total", 1, 0, 0)
         local msg = string.format("certificate_data dictionary is full, LRU entry has been removed to store %s",
           server.hostname)
         ngx.log(ngx.WARN, msg)
@@ -71,6 +78,9 @@ local function handle_servers()
       ngx.log(ngx.WARN, "hostname or pemCertKey are not present")
     end
   end
+  metrics_data:set("cert_last_success", cert_count_success - cert_count_forcible)
+  metrics_data:set("cert_last_fail", cert_count_fail)
+  metrics_data:set("cert_last_forcible", cert_count_forcible)
 
   if #err_buf > 0 then
     ngx.log(ngx.ERR, table.concat(err_buf))
@@ -132,6 +142,18 @@ local function handle_certs()
   end
 end
 
+local function handle_metrics()
+  ngx.status = ngx.HTTP_OK
+  ngx.say("conf_free_space_bytes: ", configuration_data:free_space())
+  ngx.say("conf_capacity_bytes: ", configuration_data:capacity())
+  ngx.say("cert_free_space_bytes: ", certificate_data:free_space())
+  ngx.say("cert_capacity_bytes: ", certificate_data:capacity())
+  ngx.say("cert_last_success: ", metrics_data:get("cert_last_success") or 0)
+  ngx.say("cert_last_fail: ", metrics_data:get("cert_last_fail") or 0)
+  ngx.say("cert_last_forcible: ", metrics_data:get("cert_last_forcible") or 0)
+  ngx.say("cert_overflow_total: ", metrics_data:get("cert_overflow_total") or 0)
+end
+
 function _M.call()
   if ngx.var.request_method ~= "POST" and ngx.var.request_method ~= "GET" then
     ngx.status = ngx.HTTP_BAD_REQUEST
@@ -151,6 +173,11 @@ function _M.call()
 
   if ngx.var.uri == "/configuration/certs" then
     handle_certs()
+    return
+  end
+
+  if ngx.var.request_uri == "/configuration/metrics" then
+    handle_metrics()
     return
   end
 
