@@ -248,6 +248,14 @@ func buildLuaSharedDictionaries(c interface{}, s interface{}, disableLuaRestyWAF
 		klog.Errorf("expected an '[]*ingress.Server' type but %T was returned", s)
 		return ""
 	}
+
+	// check if config contains lua "lua_metrics_data" value otherwise, use default
+	metricsData, ok := cfg.LuaSharedDicts["metrics_data"]
+	if !ok {
+		metricsData = 32
+	}
+	out = append(out, fmt.Sprintf("lua_shared_dict metrics_data %dk", metricsData))
+
 	// check if config contains lua "lua_configuration_data" value otherwise, use default
 	cfgData, ok := cfg.LuaSharedDicts["configuration_data"]
 	if !ok {
