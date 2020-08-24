@@ -18,7 +18,9 @@ package collectors
 
 import (
 	"log"
+	"math"
 	"regexp"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/ingress-nginx/internal/nginx"
@@ -28,6 +30,7 @@ import (
 var (
 	reCertCapacityBytes  = regexp.MustCompile(`cert_capacity_bytes: (\d+)`)
 	reCertFreeSpaceBytes = regexp.MustCompile(`cert_free_space_bytes: (\d+)`)
+	reCertLastBytes      = regexp.MustCompile(`cert_last_bytes: (\d+)`)
 	reCertLastFail       = regexp.MustCompile(`cert_last_fail: (\d+)`)
 	reCertLastForcible   = regexp.MustCompile(`cert_last_forcible: (\d+)`)
 	reCertLastSuccess    = regexp.MustCompile(`cert_last_success: (\d+)`)
@@ -45,20 +48,22 @@ type (
 
 	nginxLuaStatusData struct {
 		certificateLast          *prometheus.Desc
+		certificateLastBytes     *prometheus.Desc
 		certificateOverflowTotal *prometheus.Desc
 		sharedDictionaryCapacity *prometheus.Desc
 		sharedDictionaryFree     *prometheus.Desc
 	}
 
 	basicLuaStatus struct {
-		CertificateCapacity      int
-		CertificateFreeSpace     int
-		CertificateLastFail      int
-		CertificateLastForcible  int
-		CertificateLastSuccess   int
-		CertificateOverflowTotal int
-		ConfigurationCapacity    int
-		ConfigurationFreeSpace   int
+		CertificateCapacity      float64
+		CertificateFreeSpace     float64
+		CertificateLastBytes     float64
+		CertificateLastFail      float64
+		CertificateLastForcible  float64
+		CertificateLastSuccess   float64
+		CertificateOverflowTotal float64
+		ConfigurationCapacity    float64
+		ConfigurationFreeSpace   float64
 	}
 )
 
@@ -88,6 +93,11 @@ func NewNGINXLuaStatus(podName, namespace, ingressClass string) (NGINXLuaStatusC
 			"number of certs in last configuration update state {success, forcible, fail}",
 			[]string{"result"}, constLabels),
 
+		certificateLastBytes: prometheus.NewDesc(
+			prometheus.BuildFQName(PrometheusNamespace, subSystem, "cert_bytes"),
+			"size in bytes of last last configuration update",
+			nil, constLabels),
+
 		certificateOverflowTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(PrometheusNamespace, subSystem, "cert_overflow_total"),
 			"number of valid items removed forcibly when out of storage in the shared memory zone",
@@ -109,6 +119,7 @@ func NewNGINXLuaStatus(podName, namespace, ingressClass string) (NGINXLuaStatusC
 
 // Describe implements prometheus.Collector.
 func (p nginxLuaStatusCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- p.data.certificateLastBytes
 	ch <- p.data.certificateLast
 	ch <- p.data.certificateOverflowTotal
 	ch <- p.data.sharedDictionaryCapacity
@@ -134,16 +145,36 @@ func (p nginxLuaStatusCollector) Stop() {
 	close(p.scrapeChan)
 }
 
+func toFloat64(data []string, pos int) float64 {
+	if len(data) == 0 {
+		return math.NaN()
+	}
+	if pos > len(data) {
+		return math.NaN()
+	}
+	if v, err := strconv.ParseFloat(data[pos], 64); err == nil {
+		return v
+	}
+	return math.NaN()
+}
+
 func parseLua(data string) *basicLuaStatus {
 	return &basicLuaStatus{
-		CertificateCapacity:      toInt(reCertCapacityBytes.FindStringSubmatch(data), 1),
-		CertificateFreeSpace:     toInt(reCertFreeSpaceBytes.FindStringSubmatch(data), 1),
-		CertificateLastFail:      toInt(reCertLastFail.FindStringSubmatch(data), 1),
-		CertificateLastForcible:  toInt(reCertLastForcible.FindStringSubmatch(data), 1),
-		CertificateLastSuccess:   toInt(reCertLastSuccess.FindStringSubmatch(data), 1),
-		CertificateOverflowTotal: toInt(reCertOverflowTotal.FindStringSubmatch(data), 1),
-		ConfigurationCapacity:    toInt(reConfCapacityBytes.FindStringSubmatch(data), 1),
-		ConfigurationFreeSpace:   toInt(reConfFreeSpaceBytes.FindStringSubmatch(data), 1),
+		CertificateCapacity:      toFloat64(reCertCapacityBytes.FindStringSubmatch(data), 1),
+		CertificateFreeSpace:     toFloat64(reCertFreeSpaceBytes.FindStringSubmatch(data), 1),
+		CertificateLastBytes:     toFloat64(reCertLastBytes.FindStringSubmatch(data), 1),
+		CertificateLastFail:      toFloat64(reCertLastFail.FindStringSubmatch(data), 1),
+		CertificateLastForcible:  toFloat64(reCertLastForcible.FindStringSubmatch(data), 1),
+		CertificateLastSuccess:   toFloat64(reCertLastSuccess.FindStringSubmatch(data), 1),
+		CertificateOverflowTotal: toFloat64(reCertOverflowTotal.FindStringSubmatch(data), 1),
+		ConfigurationCapacity:    toFloat64(reConfCapacityBytes.FindStringSubmatch(data), 1),
+		ConfigurationFreeSpace:   toFloat64(reConfFreeSpaceBytes.FindStringSubmatch(data), 1),
+	}
+}
+
+func mustNewConstMetricIfANumber(ch chan<- prometheus.Metric, desc *prometheus.Desc, valueType prometheus.ValueType, value float64, labelValues ...string)  { 
+	if !math.IsNaN(value) {
+		ch<-prometheus.MustNewConstMetric(desc , valueType, value, labelValues ...)
 	}
 }
 
@@ -164,12 +195,13 @@ func (p nginxLuaStatusCollector) scrape(ch chan<- prometheus.Metric) {
 
 	s := parseLua(string(data))
 
-	ch <- prometheus.MustNewConstMetric(p.data.certificateLast, prometheus.GaugeValue, float64(s.CertificateLastFail), "fail")
-	ch <- prometheus.MustNewConstMetric(p.data.certificateLast, prometheus.GaugeValue, float64(s.CertificateLastForcible), "forcible")
-	ch <- prometheus.MustNewConstMetric(p.data.certificateLast, prometheus.GaugeValue, float64(s.CertificateLastSuccess), "success")
-	ch <- prometheus.MustNewConstMetric(p.data.certificateOverflowTotal, prometheus.CounterValue, float64(s.CertificateOverflowTotal))
-	ch <- prometheus.MustNewConstMetric(p.data.sharedDictionaryCapacity, prometheus.GaugeValue, float64(s.CertificateCapacity), "certificate")
-	ch <- prometheus.MustNewConstMetric(p.data.sharedDictionaryCapacity, prometheus.GaugeValue, float64(s.ConfigurationCapacity), "configuration")
-	ch <- prometheus.MustNewConstMetric(p.data.sharedDictionaryFree, prometheus.GaugeValue, float64(s.CertificateFreeSpace), "certificate")
-	ch <- prometheus.MustNewConstMetric(p.data.sharedDictionaryFree, prometheus.GaugeValue, float64(s.ConfigurationFreeSpace), "configuration")
+	mustNewConstMetricIfANumber(ch,p.data.certificateLast, prometheus.GaugeValue, s.CertificateLastFail, "fail")
+	mustNewConstMetricIfANumber(ch,p.data.certificateLast, prometheus.GaugeValue, s.CertificateLastForcible, "forcible")
+	mustNewConstMetricIfANumber(ch,p.data.certificateLast, prometheus.GaugeValue, s.CertificateLastSuccess, "success")
+	mustNewConstMetricIfANumber(ch,p.data.certificateLastBytes, prometheus.GaugeValue, s.CertificateLastBytes)
+	mustNewConstMetricIfANumber(ch,p.data.certificateOverflowTotal, prometheus.CounterValue, s.CertificateOverflowTotal)
+	mustNewConstMetricIfANumber(ch,p.data.sharedDictionaryCapacity, prometheus.GaugeValue, s.CertificateCapacity, "certificate")
+	mustNewConstMetricIfANumber(ch,p.data.sharedDictionaryCapacity, prometheus.GaugeValue, s.ConfigurationCapacity, "configuration")
+	mustNewConstMetricIfANumber(ch,p.data.sharedDictionaryFree, prometheus.GaugeValue, s.CertificateFreeSpace, "certificate")
+	mustNewConstMetricIfANumber(ch,p.data.sharedDictionaryFree, prometheus.GaugeValue, s.ConfigurationFreeSpace, "configuration")
 }

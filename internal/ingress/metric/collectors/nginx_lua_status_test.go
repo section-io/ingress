@@ -37,29 +37,15 @@ func TestLuaStatusCollector(t *testing.T) {
 		want    string
 	}{
 		{
-			name: "should return empty zero metrics",
+			name: "should return empty or zero metrics",
 			mock: `
 			`,
 			want: `
-				# HELP nginx_ingress_controller_nginx_process_cert_count number of certs in last configuration update state {success, forcible, fail}
-				# TYPE nginx_ingress_controller_nginx_process_cert_count gauge
-				nginx_ingress_controller_nginx_process_cert_count{controller_class="nginx",controller_namespace="default",controller_pod="pod",result="fail"} 0
-				nginx_ingress_controller_nginx_process_cert_count{controller_class="nginx",controller_namespace="default",controller_pod="pod",result="forcible"} 0
-				nginx_ingress_controller_nginx_process_cert_count{controller_class="nginx",controller_namespace="default",controller_pod="pod",result="success"} 0
-				# HELP nginx_ingress_controller_nginx_process_cert_overflow_total number of valid items removed forcibly when out of storage in the shared memory zone
-				# TYPE nginx_ingress_controller_nginx_process_cert_overflow_total counter
-				nginx_ingress_controller_nginx_process_cert_overflow_total{controller_class="nginx",controller_namespace="default",controller_pod="pod"} 0
-				# HELP nginx_ingress_controller_nginx_process_dictionary_capacity capacity in bytes for the shm-based dictionary
-				# TYPE nginx_ingress_controller_nginx_process_dictionary_capacity gauge
-				nginx_ingress_controller_nginx_process_dictionary_capacity{controller_class="nginx",controller_namespace="default",controller_pod="pod",name="certificate"} 0
-				nginx_ingress_controller_nginx_process_dictionary_capacity{controller_class="nginx",controller_namespace="default",controller_pod="pod",name="configuration"} 0
-				# HELP nginx_ingress_controller_nginx_process_dictionary_free free page size in bytes for the shm-based dictionary
-				# TYPE nginx_ingress_controller_nginx_process_dictionary_free gauge
-				nginx_ingress_controller_nginx_process_dictionary_free{controller_class="nginx",controller_namespace="default",controller_pod="pod",name="certificate"} 0
-				nginx_ingress_controller_nginx_process_dictionary_free{controller_class="nginx",controller_namespace="default",controller_pod="pod",name="configuration"} 0			`,
+			`,
 			metrics: []string{
 				"nginx_ingress_controller_nginx_process_dictionary_capacity",
 				"nginx_ingress_controller_nginx_process_dictionary_free",
+				"nginx_ingress_controller_nginx_process_cert_bytes",
 				"nginx_ingress_controller_nginx_process_cert_count",
 				"nginx_ingress_controller_nginx_process_cert_overflow_total",
 			},
@@ -75,6 +61,7 @@ func TestLuaStatusCollector(t *testing.T) {
 			cert_last_fail: 6
 			cert_last_forcible: 7
 			cert_overflow_total: 8
+			cert_capacity_bytes: 9
 					  `,
 			want: `
 				# HELP nginx_ingress_controller_nginx_process_cert_count number of certs in last configuration update state {success, forcible, fail}
@@ -96,6 +83,7 @@ func TestLuaStatusCollector(t *testing.T) {
 			metrics: []string{
 				"nginx_ingress_controller_nginx_process_dictionary_capacity",
 				"nginx_ingress_controller_nginx_process_dictionary_free",
+				"nginx_ingress_controller_nginx_process_cert_bytes",
 				"nginx_ingress_controller_nginx_process_cert_count",
 				"nginx_ingress_controller_nginx_process_cert_overflow_total",
 			},

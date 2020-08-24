@@ -48,6 +48,10 @@ local function handle_servers()
 
   local raw_servers = fetch_request_body()
 
+  if raw_servers then
+    metrics_data:set("cert_last_bytes",  string.len(raw_servers))
+  end
+
   local servers, err = cjson.decode(raw_servers)
   if not servers then
     ngx.log(ngx.ERR, "could not parse servers: ", err)
@@ -152,6 +156,7 @@ local function handle_metrics()
   ngx.say("cert_last_fail: ", metrics_data:get("cert_last_fail") or 0)
   ngx.say("cert_last_forcible: ", metrics_data:get("cert_last_forcible") or 0)
   ngx.say("cert_overflow_total: ", metrics_data:get("cert_overflow_total") or 0)
+  ngx.say("cert_last_bytes: ", metrics_data:get("cert_last_bytes") or 0)
 end
 
 function _M.call()
