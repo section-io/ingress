@@ -24,8 +24,7 @@ func toJson(input interface{}) string {
 	return ""
 }
 
-// reduceByAlias redueses the incoming server blocks to a single
-// server based on the alias
+// reduceByAlias reduces the incoming servers by incoming Alias value, joining multiple Hostname into outgoing Alias value
 func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
 	// The fallback server `_` has no Alias, so this relies on us using an Alias
 	// for all ingress objects so there is no overlap.
@@ -35,9 +34,14 @@ func reduceByAlias(servers []*ingress.Server) []*ingress.Server {
 		alias := s.Alias
 		rsa, ok := rs[alias]
 		if !ok {
+			s.Alias = ""
 			rs[alias] = s
 		} else {
-			rsa.Alias = fmt.Sprintf("%s %s", rs[alias].Alias, s.Hostname)
+			if rsa.Alias == "" {
+				rsa.Alias = s.Hostname
+			} else {
+				rsa.Alias = fmt.Sprintf("%s %s", rs[alias].Alias, s.Hostname)
+			}
 			rs[alias] = rsa
 		}
 	}
