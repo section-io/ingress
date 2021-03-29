@@ -30,6 +30,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	text_template "text/template"
 	"time"
@@ -51,6 +52,8 @@ const (
 	slash         = "/"
 	nonIdempotent = "non_idempotent"
 	defBufferSize = 65535
+
+	sectionDefaultCertificateDictSize = 300
 )
 
 // TemplateWriter is the interface to render a template
@@ -263,10 +266,12 @@ func buildLuaSharedDictionaries(c interface{}, s interface{}, disableLuaRestyWAF
 	}
 	out = append(out, fmt.Sprintf("lua_shared_dict configuration_data %dM", cfgData))
 
-	// check if config contains "lua_certificate_data" value otherwise, use default
-	certData, ok := cfg.LuaSharedDicts["certificate_data"]
-	if !ok {
-		certData = 50
+	// In our Section branch, pull the certificate_data size from an environment
+	// variable. Using the config map in our use case will cause the lua cert
+	// dictionary to be re-allocated, but not re-populated. This is very very bad.
+	certData, _ := strconv.Atoi(os.Getenv("CERTIFICATE_LUA_SHARED_DICT_SIZE"))
+	if certData == 0 {
+		certData = sectionDefaultCertificateDictSize
 	}
 	out = append(out, fmt.Sprintf("lua_shared_dict certificate_data %dM", certData))
 	if !disableLuaRestyWAF {
