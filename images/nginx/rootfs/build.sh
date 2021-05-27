@@ -21,21 +21,21 @@ set -o pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
-export OPENRESTY_VERSION=1.15.8.1
+export OPENRESTY_VERSION=1.19.3.1
 export NGINX_DIGEST_AUTH=cd8641886c873cf543255aeda20d23e4cd603d05
 export NGINX_SUBSTITUTIONS=bc58cb11844bc42735bbaef7085ea86ace46d05b
-export NGINX_OPENTRACING_VERSION=0.8.0
+export NGINX_OPENTRACING_VERSION=0.9.0
 export OPENTRACING_CPP_VERSION=1.5.1
 export ZIPKIN_CPP_VERSION=0.5.2
-export JAEGER_VERSION=cdfaf5bb25ff5f8ec179fd548e6c7c2ade9a6a09
-export MSGPACK_VERSION=3.1.1
-export DATADOG_CPP_VERSION=1.0.1
-export MODSECURITY_VERSION=d7101e13685efd7e7c9f808871b202656a969f4b
-export MODSECURITY_LIB_VERSION=3.0.3
-export OWASP_MODSECURITY_CRS_VERSION=3.1.0
-export LUA_BRIDGE_TRACER_VERSION=da8889d872dbea9864f45ed8c04680a01a9dd2e6
+export JAEGER_VERSION=0.4.2
+export MSGPACK_VERSION=3.2.1
+export DATADOG_CPP_VERSION=1.1.5
+export MODSECURITY_VERSION=b55a5778c539529ae1aa10ca49413771d52bb62e
+export MODSECURITY_LIB_VERSION=v3.0.4
+export OWASP_MODSECURITY_CRS_VERSION=v3.3.0
+export LUA_BRIDGE_TRACER_VERSION=0.1.1
 export NGINX_INFLUXDB_VERSION=5b09391cb7b9a889687c0aa67964c06a2d933e8b
-export GEOIP2_VERSION=3.2
+export GEOIP2_VERSION=3.3
 export NGINX_AJP_VERSION=bf6cd93f2098b59260de8d494f0f4b1f11a84627
 export RESTY_LUAROCKS_VERSION=3.1.3
 export LUA_RESTY_BALANCER_VERSION=0.03
@@ -118,14 +118,15 @@ function geoip2_get {
     && rm -rf $GEOIP_FOLDER/$1.tar.gz
 }
 
-geoip2_get "GeoLite2-City"     "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz"
-geoip2_get "GeoLite2-ASN"      "http://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
+# New licensing mean no public download
+# geoip2_get "GeoLite2-City"     "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz"
+# geoip2_get "GeoLite2-ASN"      "http://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz"
 
 mkdir --verbose -p "$BUILD_PATH"
 cd "$BUILD_PATH"
 
 # download, verify and extract the source files
-get_src 89a1238ca177692d6903c0adbea5bdf2a0b82c383662a73c03ebf5ef9f570842 \
+get_src f36fcd9c51f4f9eb8aaab8c7f9e21018d5ce97694315b19cacd6ccf53ab03d5d \
         "https://openresty.org/download/openresty-$OPENRESTY_VERSION.tar.gz"
 
 get_src fe683831f832aae4737de1e1026a4454017c2d5f98cb88b08c5411dc380062f8 \
@@ -134,7 +135,7 @@ get_src fe683831f832aae4737de1e1026a4454017c2d5f98cb88b08c5411dc380062f8 \
 get_src 618551948ab14cac51d6e4ad00452312c7b09938f59ebff4f93875013be31f2d \
         "https://github.com/yaoweibin/ngx_http_substitutions_filter_module/archive/$NGINX_SUBSTITUTIONS.tar.gz"
 
-get_src b2159297814d5df153cf45f355bcd8ffdb71f2468e8149ad549d4f9c0cdc81ad \
+get_src 4fc410d7aef0c8a6371afa9f249d2c6cec50ea88785d05052f8f457c35b69c18 \
         "https://github.com/opentracing-contrib/nginx-opentracing/archive/v$NGINX_OPENTRACING_VERSION.tar.gz"
 
 get_src 015c4187f7a6426a2b5196f0ccd982aa87f010cf61f507ae3ce5c90523f92301 \
@@ -143,25 +144,25 @@ get_src 015c4187f7a6426a2b5196f0ccd982aa87f010cf61f507ae3ce5c90523f92301 \
 get_src 30affaf0f3a84193f7127cc0135da91773ce45d902414082273dae78914f73df \
         "https://github.com/rnburn/zipkin-cpp-opentracing/archive/v$ZIPKIN_CPP_VERSION.tar.gz"
 
-get_src 5c8d25e68fb852f61489b669aebb7bd8ca8c88ebb5e5f969212fcceff3ee2d0b \
+get_src 3f943d1ac7bbf64b010a57b8738107c1412cb31c55c73f0772b4148614493b7b \
         "https://github.com/SpiderLabs/ModSecurity-nginx/archive/$MODSECURITY_VERSION.tar.gz"
 
-get_src 3183450d897baa9309347c8617edc0c97c5b29ffc32bd2d12f498edf2dcbeffa \
-        "https://github.com/jaegertracing/jaeger-client-cpp/archive/$JAEGER_VERSION.tar.gz"
+get_src 21257af93a64fee42c04ca6262d292b2e4e0b7b0660c511db357b32fd42ef5d3 \
+        "https://github.com/jaegertracing/jaeger-client-cpp/archive/v$JAEGER_VERSION.tar.gz"
 
-get_src bda49f996a73d2c6080ff0523e7b535917cd28c8a79c3a5da54fc29332d61d1e \
+get_src 464f46744a6be778626d11452c4db3c2d09461080c6db42e358e21af19d542f6 \
         "https://github.com/msgpack/msgpack-c/archive/cpp-$MSGPACK_VERSION.tar.gz"
 
-get_src f7fb2ad541f812c36fd78f9a38e4582d87dadb563ab80bee3f7c3a2132a425c5 \
+get_src b84fd2fb0bb0578af4901db31d1c0ae909b532a1016fe6534cbe31a6c3ad6924 \
         "https://github.com/DataDog/dd-opentracing-cpp/archive/v$DATADOG_CPP_VERSION.tar.gz"
 
-get_src f5470132d8756eef293833e30508926894883924a445e3b9a07c869d26d4706d \
-        "https://github.com/opentracing/lua-bridge-tracer/archive/$LUA_BRIDGE_TRACER_VERSION.tar.gz"
+get_src 6faab57557bd9cc9fc38208f6bc304c1c13cf048640779f98812cf1f9567e202 \
+        "https://github.com/opentracing/lua-bridge-tracer/archive/v$LUA_BRIDGE_TRACER_VERSION.tar.gz"
 
 get_src 1af5a5632dc8b00ae103d51b7bf225de3a7f0df82f5c6a401996c080106e600e \
         "https://github.com/influxdata/nginx-influxdb-module/archive/$NGINX_INFLUXDB_VERSION.tar.gz"
 
-get_src 15bd1005228cf2c869a6f09e8c41a6aaa6846e4936c473106786ae8ac860fab7 \
+get_src 41378438c833e313a18869d0c4a72704b4835c30acaf7fd68013ab6732ff78a7 \
         "https://github.com/leev/ngx_http_geoip2_module/archive/$GEOIP2_VERSION.tar.gz"
 
 get_src 5f629a50ba22347c441421091da70fdc2ac14586619934534e5a0f8a1390a950 \
@@ -317,7 +318,7 @@ git submodule update
 
 # build modsecurity library
 cd "$BUILD_PATH"
-git clone -b v$MODSECURITY_LIB_VERSION https://github.com/SpiderLabs/ModSecurity
+git clone --depth=1 -b $MODSECURITY_LIB_VERSION https://github.com/SpiderLabs/ModSecurity
 cd ModSecurity/
 git submodule init
 git submodule update
@@ -333,7 +334,8 @@ cp unicode.mapping /etc/nginx/modsecurity/unicode.mapping
 # Download owasp modsecurity crs
 cd /etc/nginx/
 
-git clone -b v$OWASP_MODSECURITY_CRS_VERSION https://github.com/SpiderLabs/owasp-modsecurity-crs
+git clone -b $OWASP_MODSECURITY_CRS_VERSION https://github.com/coreruleset/coreruleset
+mv coreruleset owasp-modsecurity-crs
 cd owasp-modsecurity-crs
 
 mv crs-setup.conf.example crs-setup.conf
@@ -376,11 +378,11 @@ Include /etc/nginx/owasp-modsecurity-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTE
 # build nginx
 cd "$BUILD_PATH/openresty-$OPENRESTY_VERSION"
 
-echo "Patching NGINX for CVE-2018-16843, CVE-2018-16844, CVE-2019-9511, CVE-2019-9513, and CVE-2019-9516"
-# Upstream change https://github.com/openresty/openresty/pull/515
-# TODO: remove after openresty release
-cat /patches/patch.2019.h2.txt | patch -d bundle/nginx-1.15.8/ -p0
-rm -rf /patches
+# apply nginx patches
+for PATCH in `ls /patches`;do
+  echo "Patch: $PATCH"
+  patch -d bundle/nginx-1.19.3 -p1 < /patches/$PATCH #|| echo "  =*=*= FAILINATED: $PATCH"
+done
 
 WITH_FLAGS="--with-debug \
   --with-compat \
