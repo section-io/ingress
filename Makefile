@@ -126,7 +126,7 @@ else
 endif
 
 	echo "Building docker image..."
-	$(DOCKER) build --no-cache --pull -t $(MULTI_ARCH_IMAGE):$(TAG) $(TEMP_DIR)/rootfs
+	$(DOCKER) build --no-cache -t $(MULTI_ARCH_IMAGE):$(TAG) $(TEMP_DIR)/rootfs
 
 
 .PHONY: clean-container
